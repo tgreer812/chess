@@ -320,6 +320,7 @@ namespace chesslib_test.PieceTests
         {
             // Arrange
             var board = new Board();
+            var game = new Game(board);
             var whiteKing = new King(PieceColor.White);
             var whiteRook = new Rook(PieceColor.White);
             var blackRook = new Rook(PieceColor.Black);
@@ -360,13 +361,11 @@ namespace chesslib_test.PieceTests
             board.GetSquare(7, 5).Piece = null; // f1
             board.GetSquare(7, 6).Piece = null; // g1
             
-            // Simulate rook having moved (need to add HasMoved to Rook class)
-            // For now, this test will pass until Rook tracking is implemented
-            // TODO: Update when rook movement tracking is implemented
+            // Simulate rook having moved
+            whiteRook.SetHasMoved();
             
             // Act & Assert
             // King castling kingside should be invalid because rook has moved
-            // This assertion might need to be reversed once Rook has HasMoved functionality
             Assert.False(whiteKing.IsValidMove(board, kingSquare, board.GetSquare(7, 6)));
         }
         

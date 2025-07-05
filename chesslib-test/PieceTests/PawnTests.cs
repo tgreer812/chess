@@ -205,6 +205,7 @@ namespace chesslib_test.PieceTests
         {
             // Arrange
             var board = new Board();
+            var game = new Game(board);
             var whitePawn = new Pawn(PieceColor.White);
             var blackPawn = new Pawn(PieceColor.Black);
             
@@ -216,25 +217,18 @@ namespace chesslib_test.PieceTests
             whiteSquare.Piece = whitePawn;
             blackSquare.Piece = blackPawn;
             
-            // Simulate that the black pawn just moved two squares by setting a LastMoveWasTwoSquareAdvance flag
-            // This is not implemented yet, so we'll need to add this property to the Pawn class
-            // blackPawn.LastMoveWasTwoSquareAdvance = true;
-            
-            // The destination square for the en passant capture
+            // Simulate that the black pawn just moved two squares
+            // Set the en passant capture square
             var captureSquare = board.GetSquare(2, 5); // f6
+            game.EnPassantCaptureSquare = captureSquare;
             
             // Act & Assert
             // White pawn should be able to capture the black pawn en passant
-            // This will fail until en passant is implemented in the Pawn class
             Assert.True(whitePawn.IsValidMove(board, whiteSquare, captureSquare));
             
-            // Verify that we need the black pawn to have just moved two squares
-            // Reset the flag to simulate that the pawn moved earlier
-            // blackPawn.LastMoveWasTwoSquareAdvance = false;
-            
-            // Now the en passant capture should not be valid
-            // This will also fail until en passant is implemented in the Pawn class
-            // Assert.False(whitePawn.IsValidMove(board, whiteSquare, captureSquare));
+            // Now the en passant capture should not be valid if reset
+            game.EnPassantCaptureSquare = null;
+            Assert.False(whitePawn.IsValidMove(board, whiteSquare, captureSquare));
         }
         
         [Fact]
@@ -269,6 +263,7 @@ namespace chesslib_test.PieceTests
         {
             // Arrange
             var board = new Board();
+            var game = new Game(board);
             var whitePawn = new Pawn(PieceColor.White);
             var blackPawn = new Pawn(PieceColor.Black);
             
@@ -281,10 +276,9 @@ namespace chesslib_test.PieceTests
             whiteSquare.Piece = whitePawn;
             
             // Simulate that the white pawn just moved two squares
-            // whitePawn.LastMoveWasTwoSquareAdvance = true;
-            
-            // The destination square for the en passant capture
+            // Set the en passant capture square
             var captureSquare = board.GetSquare(5, 3); // d3
+            game.EnPassantCaptureSquare = captureSquare;
             
             // Act & Assert
             // Black pawn should be able to capture the white pawn en passant

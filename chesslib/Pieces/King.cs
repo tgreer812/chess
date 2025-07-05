@@ -36,7 +36,7 @@ namespace chesslib.Pieces
         
         /// <summary>
         /// Validates if a move from the source square to the destination square is legal for a king.
-        /// Kings move one square in any direction.
+        /// Kings move one square in any direction or castling moves.
         /// </summary>
         /// <param name="board">The current chess board.</param>
         /// <param name="sourceSquare">The source square where the king is currently located.</param>
@@ -48,10 +48,6 @@ namespace chesslib.Pieces
             int rowDiff = Math.Abs(destSquare.Row - sourceSquare.Row);
             int colDiff = Math.Abs(destSquare.Column - sourceSquare.Column);
             
-            // Kings move one square in any direction
-            if (rowDiff > 1 || colDiff > 1)
-                return false;
-                
             // Ensure we're not moving to the same square
             if (rowDiff == 0 && colDiff == 0)
                 return false;
@@ -59,11 +55,77 @@ namespace chesslib.Pieces
             // Check if the destination has a piece of the same color
             if (destSquare.Piece != null && destSquare.Piece.Color == Color)
                 return false;
-
-            // TODO: Add castling logic
-            // TODO: Add check validation (kings cannot move into check)
             
-            return true;
+            // Regular king move - one square in any direction
+            if (rowDiff <= 1 && colDiff <= 1)
+                return true;
+            
+            // Check if this is a castling move
+            if (rowDiff == 0 && colDiff == 2 && !hasMoved)
+            {
+                // Make sure the king is on the correct rank
+                int castlingRank = Color == PieceColor.White ? 7 : 0;
+                if (sourceSquare.Row != castlingRank)
+                    return false;
+                
+                // Determine if this is kingside (column increasing) or queenside (column decreasing)
+                int rookColumn = destSquare.Column > sourceSquare.Column ? 7 : 0;
+                
+                // Get the rook square
+                var rookSquare = board.GetSquare(castlingRank, rookColumn);
+                
+                // Check if there is a rook of the same color that hasn't moved
+                if (rookSquare.Piece is not Rook || rookSquare.Piece.Color != Color)
+                    return false;
+                    
+                if (rookSquare.Piece is Rook rook && rook.HasMoved)
+                    return false;
+                
+                // Check if there are any pieces between the king and the rook
+                int startCol = Math.Min(sourceSquare.Column, rookColumn) + 1;
+                int endCol = Math.Max(sourceSquare.Column, rookColumn);
+                
+                for (int col = startCol; col < endCol; col++)
+                {
+                    if (board.GetSquare(castlingRank, col).Piece != null)
+                        return false;
+                }
+                
+                // Check if the king is in check
+                if (board.Game != null && board.Game.IsInCheck(Color))
+                    return false;
+                
+                // Check if the king would pass through or end up in a check
+                int step = destSquare.Column > sourceSquare.Column ? 1 : -1;
+                for (int col = sourceSquare.Column + step; col != destSquare.Column + step; col += step)
+                {
+                    var testSquare = board.GetSquare(castlingRank, col);
+                    
+                    // Temporarily move the king to check if it would be in check
+                    var originalPiece = testSquare.Piece;
+                    var originalKingSquare = sourceSquare.Piece;
+                    
+                    sourceSquare.Piece = null;
+                    testSquare.Piece = originalKingSquare;
+                    
+                    bool inCheck = false;
+                    if (board.Game != null)
+                        inCheck = board.Game.IsInCheck(Color);
+                    
+                    // Restore the original board state
+                    sourceSquare.Piece = originalKingSquare;
+                    testSquare.Piece = originalPiece;
+                    
+                    if (inCheck)
+                        return false;
+                }
+                
+                // All checks passed, castling is valid
+                return true;
+            }
+            
+            // Not a valid king move
+            return false;
         }
         
         /// <summary>

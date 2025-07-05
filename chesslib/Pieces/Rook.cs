@@ -8,10 +8,31 @@ namespace chesslib.Pieces
     public class Rook : Piece
     {
         /// <summary>
+        /// Tracks whether the rook has moved yet (for castling rule).
+        /// </summary>
+        private bool hasMoved;
+        
+        /// <summary>
         /// Initializes a new instance of the Rook class.
         /// </summary>
         /// <param name="color">The color of the rook.</param>
-        public Rook(PieceColor color) : base(color) { }
+        public Rook(PieceColor color) : base(color) 
+        {
+            hasMoved = false;
+        }
+        
+        /// <summary>
+        /// Records that the rook has moved.
+        /// </summary>
+        public void SetHasMoved()
+        {
+            hasMoved = true;
+        }
+        
+        /// <summary>
+        /// Gets whether the rook has moved.
+        /// </summary>
+        public bool HasMoved => hasMoved;
         
         /// <summary>
         /// Validates if a move from the source square to the destination square is legal for a rook.

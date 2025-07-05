@@ -73,10 +73,32 @@ namespace chesslib.Pieces
             if (rowDiff == direction && colDiff == 1)
             {
                 // Must have an opponent's piece to capture
-                return destSquare.Piece != null && destSquare.Piece.Color != Color;
+                if (destSquare.Piece != null && destSquare.Piece.Color != Color)
+                {
+                    return true;
+                }
+                
+                // En passant capture
+                // Check if the destination square is the en passant capture square
+                var game = board.Game;
+                if (game != null && game.EnPassantCaptureSquare == destSquare)
+                {
+                    // For white pawns (moving up/decreasing row), en passant is on rank 5 (row 3)
+                    // For black pawns (moving down/increasing row), en passant is on rank 4 (row 4)
+                    int enPassantSourceRank = Color == PieceColor.White ? 3 : 4;
+                    
+                    // Check if the pawn is on the correct rank for en passant
+                    if (sourceSquare.Row == enPassantSourceRank)
+                    {
+                        // The captured pawn should be at the same row as the moving pawn
+                        Square capturedPawnSquare = board.GetSquare(sourceSquare.Row, destSquare.Column);
+                        if (capturedPawnSquare.Piece is Pawn && capturedPawnSquare.Piece.Color != Color)
+                        {
+                            return true;
+                        }
+                    }
+                }
             }
-            
-            // TODO: Add en passant rule
             
             return false;
         }

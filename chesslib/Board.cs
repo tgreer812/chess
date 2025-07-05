@@ -17,6 +17,11 @@ namespace chesslib
         /// The squares on the board represented as a 2D list.
         /// </summary>
         private readonly List<List<Square>> squares;
+        
+        /// <summary>
+        /// Gets or sets the game this board belongs to.
+        /// </summary>
+        public Game? Game { get; set; }
 
         /// <summary>
         /// Initializes a new instance of the Board class with empty squares.

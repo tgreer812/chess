@@ -30,14 +30,26 @@ namespace chesslib
         public List<Move> MoveHistory { get; }
         
         /// <summary>
+        /// Gets the last move made in the game, or null if no moves have been made.
+        /// </summary>
+        public Move? LastMove => MoveHistory.Count > 0 ? MoveHistory[MoveHistory.Count - 1] : null;
+        
+        /// <summary>
+        /// Gets or sets the square that is available for en passant capture, or null if none.
+        /// </summary>
+        public Square? EnPassantCaptureSquare { get; set; }
+        
+        /// <summary>
         /// Initializes a new instance of the Game class with a default board setup.
         /// </summary>
         public Game()
         {
             Board = new Board();
+            Board.Game = this;
             CurrentTurn = PieceColor.White; // White starts
             IsGameOver = false;
             MoveHistory = new List<Move>();
+            EnPassantCaptureSquare = null;
             
             // Set up initial board position using the PieceFactory
             PieceFactory.SetupStandardGame(Board);
@@ -51,9 +63,11 @@ namespace chesslib
         public Game(Board board, PieceColor startingColor = PieceColor.White)
         {
             Board = board ?? throw new ArgumentNullException(nameof(board));
+            Board.Game = this;
             CurrentTurn = startingColor;
             IsGameOver = false;
             MoveHistory = new List<Move>();
+            EnPassantCaptureSquare = null;
         }
         
         /// <summary>
@@ -123,8 +137,8 @@ namespace chesslib
             // Check if the move is valid according to the piece's rules
             if (!sourceSquare.Piece.IsValidMove(Board, sourceSquare, destSquare))
                 return false;
-                
-            // Create a move record and add to history
+            
+            // Create a move record
             var move = new Move
             {
                 SourceSquare = sourceSquare,
@@ -133,6 +147,48 @@ namespace chesslib
                 CapturedPiece = destSquare.Piece,
                 MoveNumber = MoveHistory.Count + 1
             };
+            
+            // Reset the en passant capture square by default
+            Square? previousEnPassantSquare = EnPassantCaptureSquare;
+            EnPassantCaptureSquare = null;
+            
+            // Handle special move: Castling
+            if (sourceSquare.Piece is King king && Math.Abs(destSquare.Column - sourceSquare.Column) == 2)
+            {
+                move.IsCastling = true;
+                
+                // Determine the rook's source and destination positions based on the king's move
+                int rookSourceCol = destSquare.Column > sourceSquare.Column ? 7 : 0; // Kingside or queenside
+                int rookDestCol = destSquare.Column > sourceSquare.Column ? destSquare.Column - 1 : destSquare.Column + 1;
+                
+                // Get the rook and move it
+                var rookSourceSquare = Board.GetSquare(sourceSquare.Row, rookSourceCol);
+                var rookDestSquare = Board.GetSquare(sourceSquare.Row, rookDestCol);
+                
+                // Move the rook
+                rookDestSquare.Piece = rookSourceSquare.Piece;
+                rookSourceSquare.Piece = null;
+            }
+            // Handle special move: En passant capture
+            else if (sourceSquare.Piece is Pawn && destSquare == EnPassantCaptureSquare)
+            {
+                move.IsEnPassantCapture = true;
+                
+                // Remove the captured pawn
+                var capturedPawnSquare = Board.GetSquare(sourceSquare.Row, destSquare.Column);
+                move.CapturedPiece = capturedPawnSquare.Piece;
+                capturedPawnSquare.Piece = null;
+            }
+            
+            // Check if this is a two-square pawn advance that enables en passant
+            if (sourceSquare.Piece is Pawn && Math.Abs(destSquare.Row - sourceSquare.Row) == 2)
+            {
+                move.IsTwoSquarePawnAdvance = true;
+                
+                // Set the en passant capture square for the next move
+                int enPassantRow = (sourceSquare.Row + destSquare.Row) / 2; // Middle square between source and destination
+                EnPassantCaptureSquare = Board.GetSquare(enPassantRow, sourceSquare.Column);
+            }
             
             // Execute the move
             destSquare.Piece = sourceSquare.Piece;
@@ -143,9 +199,17 @@ namespace chesslib
             {
                 pawn.SetHasMoved();
             }
-            else if (destSquare.Piece is King king)
+            else if (destSquare.Piece is King kingPiece)
             {
-                king.SetHasMoved();
+                kingPiece.SetHasMoved();
+            }
+            else if (destSquare.Piece is Rook rookPiece)
+            {
+                // Update rook movement tracking for castling
+                if (rookPiece is Rook rook)
+                {
+                    rook.SetHasMoved();
+                }
             }
             
             // Add to move history
@@ -248,6 +312,21 @@ namespace chesslib
         /// Gets or sets the move number in the game.
         /// </summary>
         public int MoveNumber { get; set; }
+        
+        /// <summary>
+        /// Gets or sets a value indicating whether this move was a two-square pawn advance.
+        /// </summary>
+        public bool IsTwoSquarePawnAdvance { get; set; }
+        
+        /// <summary>
+        /// Gets or sets a value indicating whether this move was an en passant capture.
+        /// </summary>
+        public bool IsEnPassantCapture { get; set; }
+        
+        /// <summary>
+        /// Gets or sets a value indicating whether this move was a castling move.
+        /// </summary>
+        public bool IsCastling { get; set; }
         
         /// <summary>
         /// Gets the algebraic notation of the move (e.g., "e2e4").
