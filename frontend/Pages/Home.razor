@@ -1,5 +1,40 @@
 ﻿@page "/"
+@using chesslib
 
 <PageTitle>Chess Project</PageTitle>
 
-<h1>Hello World</h1>
+<div class="home-container">
+    <h1>Chess Project</h1>
+    
+    @if (showChessBoard)
+    {
+        <ChessBoard OnSquareClicked="HandleSquareClicked" />
+        
+        @if (!string.IsNullOrEmpty(selectedSquare))
+        {
+            <div class="square-info">
+                Selected Square: @selectedSquare
+            </div>
+        }
+    }
+    else
+    {
+        <button @onclick="ToggleChessBoard" class="show-chess-button">Show Chess Board</button>
+    }
+</div>
+
+@code {
+    private bool showChessBoard = false;
+    private string selectedSquare = string.Empty;
+
+    private void ToggleChessBoard()
+    {
+        showChessBoard = !showChessBoard;
+    }
+    
+    private void HandleSquareClicked(Square square)
+    {
+        selectedSquare = square.AlgebraicPosition;
+        StateHasChanged();
+    }
+}

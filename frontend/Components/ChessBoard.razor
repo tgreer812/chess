@@ -1,0 +1,57 @@
+@using System.Collections.Generic
+@using chesslib
+@namespace frontend.Components
+
+<div class="container chess-container">
+    <h1>Chess Board</h1>
+    <div class="chess-board-wrapper">
+        <div class="coordinates-left">
+            <div>8</div>
+            <div>7</div>
+            <div>6</div>
+            <div>5</div>
+            <div>4</div>
+            <div>3</div>
+            <div>2</div>
+            <div>1</div>
+        </div>
+        <div class="board-container">
+            <div class="chess-board">
+                @for (int row = 0; row < Board.BoardSize; row++)
+                {
+                    @for (int col = 0; col < Board.BoardSize; col++)
+                    {
+                        var square = BoardModel.GetSquare(row, col);
+                        <div class="square @(square.Color == SquareColor.Light ? "light" : "dark")" 
+                             data-position="@square.AlgebraicPosition"
+                             @onclick="() => SquareClicked(square)">
+                        </div>
+                    }
+                }
+            </div>
+            <div class="coordinates-bottom">
+                <div>a</div>
+                <div>b</div>
+                <div>c</div>
+                <div>d</div>
+                <div>e</div>
+                <div>f</div>
+                <div>g</div>
+                <div>h</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private Board BoardModel { get; set; } = new Board();
+
+    [Parameter]
+    public EventCallback<Square> OnSquareClicked { get; set; }
+
+    private void SquareClicked(Square square)
+    {
+        Console.WriteLine($"Square clicked: {square.AlgebraicPosition}");
+        OnSquareClicked.InvokeAsync(square);
+    }
+}

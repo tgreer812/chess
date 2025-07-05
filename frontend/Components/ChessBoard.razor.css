@@ -1,0 +1,139 @@
+/* ChessBoard.razor.css - Scoped styles for the ChessBoard component */
+
+.chess-container {
+    text-align: center;
+    background: linear-gradient(145deg, #1a1a1a, #0f0f0f);
+    padding: 2rem;
+    border-radius: 16px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.8),
+                inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+h1 {
+    color: #e0e0e0;
+    margin-bottom: 2rem;
+    font-size: 2.5rem;
+    font-weight: 200;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.chess-board-wrapper {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+}
+
+.board-container {
+    display: flex;
+    flex-direction: column;
+}
+
+.chess-board {
+    display: grid;
+    grid-template-columns: repeat(8, 60px);
+    grid-template-rows: repeat(8, 60px);
+    border: 3px solid #2a2a2a;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.9),
+                inset 0 0 20px rgba(0, 0, 0, 0.5);
+    background: #1a1a1a;
+}
+
+.square {
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    transition: all 0.2s ease;
+}
+
+.square.light {
+    background: linear-gradient(145deg, #4a4a4a, #3a3a3a);
+    box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.1),
+                inset 0 -1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.square.dark {
+    background: linear-gradient(145deg, #1f1f1f, #141414);
+    box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.05),
+                inset 0 -1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.coordinates-left,
+.coordinates-bottom {
+    display: flex;
+    color: #808080;
+    font-weight: 600;
+    font-size: 14px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.coordinates-left {
+    flex-direction: column;
+    margin-right: 10px;
+}
+
+.coordinates-left div {
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+}
+
+.coordinates-bottom {
+    margin-top: 10px;
+}
+
+.coordinates-bottom div {
+    width: 60px;
+    text-align: center;
+}
+
+/* Hover effect for squares - stone-like glow */
+.square:hover {
+    transform: translateZ(2px);
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.1),
+                inset 0 0 10px rgba(255, 255, 255, 0.05);
+    cursor: pointer;
+}
+
+.square.light:hover {
+    background: linear-gradient(145deg, #5a5a5a, #4a4a4a);
+}
+
+.square.dark:hover {
+    background: linear-gradient(145deg, #2a2a2a, #1a1a1a);
+}
+
+/* Responsive design */
+@media (max-width: 600px) {
+    .chess-board {
+        grid-template-columns: repeat(8, 40px);
+        grid-template-rows: repeat(8, 40px);
+    }
+    
+    .square {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .coordinates-left div {
+        height: 40px;
+    }
+    
+    .coordinates-bottom div {
+        width: 40px;
+    }
+    
+    h1 {
+        font-size: 2rem;
+    }
+    
+    .chess-container {
+        padding: 1.5rem;
+    }
+}
