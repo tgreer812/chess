@@ -13,6 +13,11 @@ namespace chesslib.Pieces
         private bool hasMoved;
 
         /// <summary>
+        /// Gets a value indicating whether the pawn has moved.
+        /// </summary>
+        public bool HasMoved => hasMoved;
+
+        /// <summary>
         /// Initializes a new instance of the Pawn class.
         /// </summary>
         /// <param name="color">The color of the pawn.</param>
@@ -28,11 +33,6 @@ namespace chesslib.Pieces
         {
             hasMoved = true;
         }
-
-        /// <summary>
-        /// Gets whether the pawn has moved.
-        /// </summary>
-        public bool HasMoved => hasMoved;
 
         /// <summary>
         /// Validates if a move from the source square to the destination square is legal for a pawn.
@@ -60,7 +60,7 @@ namespace chesslib.Pieces
             }
             
             // Initial move - 2 squares forward
-            if (rowDiff == 2 * direction && colDiff == 0 && !hasMoved)
+            if (rowDiff == 2 * direction && colDiff == 0 && !HasMoved)
             {
                 // Check if there's a piece in the way
                 Square middleSquare = board.GetSquare(sourceSquare.Row + direction, sourceSquare.Column);

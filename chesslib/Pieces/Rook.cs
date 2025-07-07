@@ -13,6 +13,11 @@ namespace chesslib.Pieces
         private bool hasMoved;
         
         /// <summary>
+        /// Gets a value indicating whether the rook has moved.
+        /// </summary>
+        public bool HasMoved => hasMoved;
+        
+        /// <summary>
         /// Initializes a new instance of the Rook class.
         /// </summary>
         /// <param name="color">The color of the rook.</param>
@@ -28,11 +33,6 @@ namespace chesslib.Pieces
         {
             hasMoved = true;
         }
-        
-        /// <summary>
-        /// Gets whether the rook has moved.
-        /// </summary>
-        public bool HasMoved => hasMoved;
         
         /// <summary>
         /// Validates if a move from the source square to the destination square is legal for a rook.

@@ -13,6 +13,11 @@ namespace chesslib.Pieces
         private bool hasMoved;
 
         /// <summary>
+        /// Gets a value indicating whether the king has moved.
+        /// </summary>
+        public bool HasMoved => hasMoved;
+
+        /// <summary>
         /// Initializes a new instance of the King class.
         /// </summary>
         /// <param name="color">The color of the king.</param>
@@ -28,11 +33,6 @@ namespace chesslib.Pieces
         {
             hasMoved = true;
         }
-
-        /// <summary>
-        /// Gets whether the king has moved.
-        /// </summary>
-        public bool HasMoved => hasMoved;
         
         /// <summary>
         /// Validates if a move from the source square to the destination square is legal for a king.
@@ -61,7 +61,7 @@ namespace chesslib.Pieces
                 return true;
             
             // Check if this is a castling move
-            if (rowDiff == 0 && colDiff == 2 && !hasMoved)
+            if (rowDiff == 0 && colDiff == 2 && !HasMoved)
             {
                 // Make sure the king is on the correct rank
                 int castlingRank = Color == PieceColor.White ? 7 : 0;

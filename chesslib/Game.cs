@@ -274,6 +274,85 @@ namespace chesslib
         }
         
         /// <summary>
+        /// Checks if making a move from source to destination would leave the current player's king in check.
+        /// </summary>
+        /// <param name="sourceSquare">The source square.</param>
+        /// <param name="destSquare">The destination square.</param>
+        /// <returns>True if the move would leave the king in check, false otherwise.</returns>
+        private bool WouldLeaveKingInCheck(Square sourceSquare, Square destSquare)
+        {
+            // Save the current state
+            Piece? movingPiece = sourceSquare.Piece;
+            Piece? capturedPiece = destSquare.Piece;
+
+            // Special case for en passant capture
+            Square? enPassantSquare = null;
+            Piece? enPassantCapturedPawn = null;
+            if (movingPiece is Pawn && destSquare == EnPassantCaptureSquare)
+            {
+                enPassantSquare = Board.GetSquare(sourceSquare.Row, destSquare.Column);
+                enPassantCapturedPawn = enPassantSquare.Piece;
+                enPassantSquare.Piece = null; // Remove the pawn being captured en passant
+            }
+            
+            // Temporarily make the move
+            destSquare.Piece = movingPiece;
+            sourceSquare.Piece = null;
+            
+            bool kingInCheck = false;
+            
+            // Find the king's position
+            Square? kingSquare = null;
+            for (int row = 0; row < Board.BoardSize; row++)
+            {
+                for (int col = 0; col < Board.BoardSize; col++)
+                {
+                    var square = Board.GetSquare(row, col);
+                    if (square.Piece is King king && king.Color == CurrentTurn)
+                    {
+                        kingSquare = square;
+                        break;
+                    }
+                }
+                
+                if (kingSquare != null)
+                    break;
+            }
+            
+            if (kingSquare != null)
+            {
+                // Check if any opponent piece can attack the king
+                for (int row = 0; row < Board.BoardSize && !kingInCheck; row++)
+                {
+                    for (int col = 0; col < Board.BoardSize && !kingInCheck; col++)
+                    {
+                        var square = Board.GetSquare(row, col);
+                        if (square.Piece != null && square.Piece.Color != CurrentTurn)
+                        {
+                            // Check if this piece can attack the king
+                            if (square.Piece.IsValidMove(Board, square, kingSquare))
+                            {
+                                kingInCheck = true;
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // Restore the original position
+            sourceSquare.Piece = movingPiece;
+            destSquare.Piece = capturedPiece;
+            
+            // Restore en passant captured pawn if needed
+            if (enPassantSquare != null && enPassantCapturedPawn != null)
+            {
+                enPassantSquare.Piece = enPassantCapturedPawn;
+            }
+            
+            return kingInCheck;
+        }
+        
+        /// <summary>
         /// Returns a string representation of the game.
         /// </summary>
         /// <returns>A string representation of the game.</returns>
