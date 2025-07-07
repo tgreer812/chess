@@ -50,7 +50,7 @@ h1 {
 }
 
 .coordinates-left div {
-    height: 60px;
+    height: 70px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -64,20 +64,24 @@ h1 {
 
 .chess-board {
     display: grid;
-    grid-template-columns: repeat(8, 60px);
-    grid-template-rows: repeat(8, 60px);
+    grid-template-columns: repeat(8, 70px);
+    grid-template-rows: repeat(8, 70px);
     border: 2px solid #8B4513;
 }
 
 .square {
-    width: 60px;
-    height: 60px;
+    width: 70px;
+    height: 70px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     position: relative;
     transition: background-color 0.2s ease;
+    user-select: none; /* Disable text selection */
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
 }
 
 .square.light {
@@ -92,17 +96,39 @@ h1 {
     filter: brightness(1.1);
 }
 
+/* Remove the old selected style and add new selection indicator */
+.square.selected::after {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background-color: rgba(0, 0, 0, 0.3);
+    border-radius: 50%;
+    z-index: 1;
+}
+
+.square.light.selected::after {
+    background-color: rgba(0, 0, 0, 0.3);
+}
+
+.square.dark.selected::after {
+    background-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Remove the old selected style */
 .square.selected {
+    /* Remove these old styles:
     background-color: #ffff99 !important;
-    box-shadow: inset 0 0 0 3px #ff0000;
+    box-shadow: inset 0 0 0 3px #ff0000; */
 }
 
 .piece-image {
-    width: 50px;
-    height: 50px;
+    width: 60px;
+    height: 60px;
     pointer-events: none;
     -webkit-user-select: none;
     user-select: none;
+    z-index: 2; /* Ensure piece is above selection indicator */
 }
 
 .coordinates-bottom {
@@ -115,7 +141,7 @@ h1 {
 }
 
 .coordinates-bottom div {
-    width: 60px;
+    width: 70px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -134,26 +160,26 @@ h1 {
 /* Responsive design */
 @media (max-width: 600px) {
     .chess-board {
-        grid-template-columns: repeat(8, 40px);
-        grid-template-rows: repeat(8, 40px);
+        grid-template-columns: repeat(8, 50px);
+        grid-template-rows: repeat(8, 50px);
     }
     
     .square {
-        width: 40px;
-        height: 40px;
+        width: 50px;
+        height: 50px;
     }
     
     .piece-image {
-        width: 35px;
-        height: 35px;
+        width: 45px;
+        height: 45px;
     }
     
     .coordinates-left div {
-        height: 40px;
+        height: 50px;
     }
     
     .coordinates-bottom div {
-        width: 40px;
+        width: 50px;
     }
     
     h1 {
