@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using chesslib.Pieces;
+using chesslib.Controllers;
 
 namespace chesslib
 {
@@ -40,6 +42,16 @@ namespace chesslib
         public Square? EnPassantCaptureSquare { get; set; }
         
         /// <summary>
+        /// Gets the controller for the white player.
+        /// </summary>
+        public IController WhiteController { get; private set; }
+        
+        /// <summary>
+        /// Gets the controller for the black player.
+        /// </summary>
+        public IController BlackController { get; private set; }
+        
+        /// <summary>
         /// Initializes a new instance of the Game class with a default board setup.
         /// </summary>
         public Game()
@@ -53,6 +65,31 @@ namespace chesslib
             
             // Set up initial board position using the PieceFactory
             PieceFactory.SetupStandardGame(Board);
+            
+            // Default to human controllers
+            WhiteController = new HumanController();
+            BlackController = new HumanController();
+        }
+        
+        /// <summary>
+        /// Initializes a new instance of the Game class with a default board setup and specified controllers.
+        /// </summary>
+        /// <param name="whiteController">Controller for the white pieces.</param>
+        /// <param name="blackController">Controller for the black pieces.</param>
+        public Game(IController whiteController, IController blackController)
+        {
+            Board = new Board();
+            Board.Game = this;
+            CurrentTurn = PieceColor.White; // White starts
+            IsGameOver = false;
+            MoveHistory = new List<Move>();
+            EnPassantCaptureSquare = null;
+            
+            // Set up initial board position using the PieceFactory
+            PieceFactory.SetupStandardGame(Board);
+            
+            WhiteController = whiteController ?? throw new ArgumentNullException(nameof(whiteController));
+            BlackController = blackController ?? throw new ArgumentNullException(nameof(blackController));
         }
         
         /// <summary>
@@ -68,6 +105,30 @@ namespace chesslib
             IsGameOver = false;
             MoveHistory = new List<Move>();
             EnPassantCaptureSquare = null;
+            
+            // Default to human controllers
+            WhiteController = new HumanController();
+            BlackController = new HumanController();
+        }
+        
+        /// <summary>
+        /// Initializes a new instance of the Game class with a custom board and specified controllers.
+        /// </summary>
+        /// <param name="board">The custom board to use.</param>
+        /// <param name="whiteController">Controller for the white pieces.</param>
+        /// <param name="blackController">Controller for the black pieces.</param>
+        /// <param name="startingColor">The color that starts the game.</param>
+        public Game(Board board, IController whiteController, IController blackController, PieceColor startingColor = PieceColor.White)
+        {
+            Board = board ?? throw new ArgumentNullException(nameof(board));
+            Board.Game = this;
+            CurrentTurn = startingColor;
+            IsGameOver = false;
+            MoveHistory = new List<Move>();
+            EnPassantCaptureSquare = null;
+            
+            WhiteController = whiteController ?? throw new ArgumentNullException(nameof(whiteController));
+            BlackController = blackController ?? throw new ArgumentNullException(nameof(blackController));
         }
         
         /// <summary>
@@ -439,6 +500,43 @@ namespace chesslib
         public override string ToString()
         {
             return $"Current turn: {CurrentTurn}, IsGameOver: {IsGameOver}\nBoard:\n{Board}";
+        }
+        
+        /// <summary>
+        /// Asks the current player's controller for the next move and executes it.
+        /// </summary>
+        /// <returns>A Task that completes when the move is made, with a bool indicating if a move was successfully made.</returns>
+        public async Task<bool> RequestAndExecuteNextMoveAsync()
+        {
+            if (IsGameOver)
+                return false;
+                
+            // Get the current player's controller
+            IController currentController = CurrentTurn == PieceColor.White ? WhiteController : BlackController;
+            
+            // Request a move from the controller
+            var move = await currentController.GetMoveAsync(this);
+            if (move == null)
+                return false;
+                
+            // Execute the move
+            return TryMove(move.Value.from, move.Value.to);
+        }
+        
+        /// <summary>
+        /// Sets the controller for a specific color.
+        /// </summary>
+        /// <param name="controller">The controller to set.</param>
+        /// <param name="color">The color to assign the controller to.</param>
+        public void SetController(IController controller, PieceColor color)
+        {
+            if (controller == null)
+                throw new ArgumentNullException(nameof(controller));
+                
+            if (color == PieceColor.White)
+                WhiteController = controller;
+            else
+                BlackController = controller;
         }
     }
     

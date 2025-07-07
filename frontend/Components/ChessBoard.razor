@@ -1,5 +1,8 @@
 @using System.Collections.Generic
+@using System.Threading.Tasks
 @using chesslib
+@using chesslib.Controllers
+@using chesslib.Pieces
 @namespace frontend.Components
 
 <div class="container chess-container">
@@ -17,12 +20,12 @@
         </div>
         <div class="board-container">
             <div class="chess-board">
-                @for (int row = 0; row < chesslib.Board.BoardSize; row++)
+                @for (int row = 0; row < Board.BoardSize; row++)
                 {
-                    @for (int col = 0; col < chesslib.Board.BoardSize; col++)
+                    @for (int col = 0; col < Board.BoardSize; col++)
                     {
                         var square = GameInstance.Board.GetSquare(row, col);
-                        <div class="square @(square.Color == chesslib.SquareColor.Light ? "light" : "dark") @(IsSquareSelected(square) ? "selected" : "")" 
+                        <div class="square @(square.Color == SquareColor.Light ? "light" : "dark") @(IsSquareSelected(square) ? "selected" : "")" 
                              data-position="@square.AlgebraicPosition"
                              @onclick="() => SquareClicked(square)">
                             @if (square.Piece != null)
@@ -48,28 +51,101 @@
     <div class="game-info">
         <p>Current Turn: @GameInstance.CurrentTurn</p>
         <p>Move Count: @GameInstance.MoveHistory.Count</p>
+        <p>White: @(UseRandomControllerForWhite ? "Computer" : "Human")</p>
+        <p>Black: @(UseRandomControllerForBlack ? "Computer" : "Human")</p>
         @if (selectedSquare != null)
         {
             <p>Selected: @selectedSquare.AlgebraicPosition</p>
+        }
+        @if (isProcessingAutoMove)
+        {
+            <p><em>Computer is thinking...</em></p>
+        }
+        @if (AutoPlayEnabled)
+        {
+            <button class="btn btn-danger" @onclick="StopAutoPlay">Stop Auto Play</button>
+        }
+        else if (UseRandomControllerForBlack || UseRandomControllerForWhite)
+        {
+            <button class="btn btn-primary" @onclick="StartAutoPlay">Start Auto Play</button>
         }
     </div>
 </div>
 
 @code {
-    private chesslib.Game GameInstance { get; set; } = new chesslib.Game();
+    private chesslib.Game GameInstance { get; set; } = null!;
     private chesslib.Square? selectedSquare = null;
+    private bool isProcessingAutoMove = false;
+    private bool _autoPlayEnabled = false;
+    private System.Threading.CancellationTokenSource? _autoPlayCts = null;
+    private chesslib.Controllers.HumanController _humanWhite = null!;
+    private chesslib.Controllers.HumanController _humanBlack = null!;
 
     [Parameter]
-    public EventCallback<chesslib.Square> OnSquareClicked { get; set; }
+    public EventCallback<Square> OnSquareClicked { get; set; }
 
     [Parameter]
     public string? StartingPosition { get; set; }
-
+    
+    [Parameter]
+    public bool UseRandomControllerForBlack { get; set; } = false;
+    
+    [Parameter]
+    public bool UseRandomControllerForWhite { get; set; } = false;
+    
+    [Parameter]
+    public bool AutoPlayEnabled 
+    { 
+        get => _autoPlayEnabled;
+        set 
+        {
+            if (_autoPlayEnabled != value)
+            {
+                _autoPlayEnabled = value;
+                if (_autoPlayEnabled)
+                {
+                    StartAutoPlay();
+                }
+                else
+                {
+                    StopAutoPlay();
+                }
+            }
+        }
+    }
+    
     protected override void OnInitialized()
     {
+        // Initialize human controllers
+        _humanWhite = new chesslib.Controllers.HumanController();
+        _humanBlack = new chesslib.Controllers.HumanController();
+        
+        // Initialize game with appropriate controllers
         if (!string.IsNullOrEmpty(StartingPosition))
         {
             SetupCustomPosition(StartingPosition);
+        }
+        else
+        {
+            CreateNewGameWithControllers();
+        }
+    }
+    
+    private void CreateNewGameWithControllers()
+    {            var whiteController = UseRandomControllerForWhite
+                ? (IController)new RandomController()
+                : _humanWhite;
+                
+            var blackController = UseRandomControllerForBlack
+                ? (IController)new RandomController()
+                : _humanBlack;
+                
+            GameInstance = new chesslib.Game(whiteController, blackController);
+        
+        // If computer plays as white and it's the first move, start auto play
+        if (UseRandomControllerForWhite && GameInstance.CurrentTurn == PieceColor.White)
+        {
+            ProcessNextComputerMove();
         }
     }
 
@@ -86,43 +162,86 @@
         return selectedSquare != null && selectedSquare.Row == square.Row && selectedSquare.Column == square.Column;
     }
 
-    private void SquareClicked(chesslib.Square square)
+    private async void SquareClicked(Square square)
     {
         Console.WriteLine($"Square clicked: {square.AlgebraicPosition}");
         
-        if (selectedSquare == null)
+        // Handle the case when it's a human's turn
+        bool isHumanTurn = 
+            (GameInstance.CurrentTurn == PieceColor.White && !UseRandomControllerForWhite) ||
+            (GameInstance.CurrentTurn == PieceColor.Black && !UseRandomControllerForBlack);
+            
+        if (isHumanTurn)
         {
-            // First click - select piece if there is one
-            if (square.Piece != null && square.Piece.Color == GameInstance.CurrentTurn)
+            // Get the appropriate human controller
+            var humanController = GameInstance.CurrentTurn == PieceColor.White ? _humanWhite : _humanBlack;
+            
+            if (selectedSquare == null)
             {
-                selectedSquare = square;
+                // First click - select piece if it's valid
+                if (square.Piece != null && square.Piece.Color == GameInstance.CurrentTurn)
+                {
+                    selectedSquare = square;
+                    Console.WriteLine($"Selected piece at {selectedSquare.AlgebraicPosition}");
+                }
+            }
+            else
+            {
+                // Second click - try to make the move
+                if (selectedSquare == square)
+                {
+                    // Clicking the same square deselects it
+                    Console.WriteLine($"Deselecting piece at {selectedSquare.AlgebraicPosition}");
+                    selectedSquare = null;
+                }
+                else
+                {
+                    Console.WriteLine($"Attempting move from {selectedSquare.AlgebraicPosition} to {square.AlgebraicPosition}");
+                    
+                    // Store the from/to positions
+                    var fromPos = selectedSquare.AlgebraicPosition;
+                    var toPos = square.AlgebraicPosition;
+                    
+                    // Reset the selection immediately to avoid visual confusion
+                    selectedSquare = null;
+                    
+                    // Send the move to the human controller
+                    humanController.SetNextMove(fromPos, toPos);
+                    
+                    // Request the move through the game's controller system
+                    bool moveSuccessful = await GameInstance.RequestAndExecuteNextMoveAsync();
+                    
+                    if (moveSuccessful)
+                    {
+                        Console.WriteLine($"Move successful: {fromPos} to {toPos}");
+                        
+                        // Check if it's now the computer's turn and auto play is enabled
+                        if (!GameInstance.IsGameOver && 
+                            ((GameInstance.CurrentTurn == PieceColor.White && UseRandomControllerForWhite) ||
+                            (GameInstance.CurrentTurn == PieceColor.Black && UseRandomControllerForBlack)))
+                        {
+                            if (AutoPlayEnabled)
+                            {
+                                // Add a small delay to make the computer move more natural
+                                await Task.Delay(300);
+                                ProcessNextComputerMove();
+                            }
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Invalid move: {fromPos} to {toPos}");
+                    }
+                }
             }
         }
         else
         {
-            // Second click - try to move
-            if (selectedSquare == square)
-            {
-                // Clicking same square deselects
-                selectedSquare = null;
-            }
-            else
-            {
-                // Try to make the move
-                bool moveSuccessful = GameInstance.TryMove(selectedSquare, square);
-                if (moveSuccessful)
-                {
-                    Console.WriteLine($"Move made: {selectedSquare.AlgebraicPosition} to {square.AlgebraicPosition}");
-                }
-                else
-                {
-                    Console.WriteLine($"Invalid move: {selectedSquare.AlgebraicPosition} to {square.AlgebraicPosition}");
-                }
-                selectedSquare = null;
-            }
+            // It's the computer's turn, don't allow human interaction
+            Console.WriteLine("It's the computer's turn");
         }
         
-        OnSquareClicked.InvokeAsync(square);
+        await OnSquareClicked.InvokeAsync(square);
         StateHasChanged();
     }
 
@@ -154,7 +273,7 @@
         try
         {
             // Create a new board with the custom position
-            var customBoard = new chesslib.Board();
+            var customBoard = new Board();
             
             // Parse the position string - expecting format like "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w"
             // For simplicity, we'll support a basic format: piece positions separated by commas
@@ -171,16 +290,93 @@
                 ParseSimplePosition(customBoard, position);
             }
             
-            // Create a new game with the custom board
-            GameInstance = new chesslib.Game(customBoard);
+            // Create a new game with the custom board and appropriate controllers
+            var whiteController = UseRandomControllerForWhite
+                ? (chesslib.Controllers.IController)new chesslib.Controllers.RandomController()
+                : _humanWhite;
+                
+            var blackController = UseRandomControllerForBlack
+                ? (chesslib.Controllers.IController)new chesslib.Controllers.RandomController()
+                : _humanBlack;
+                
+            GameInstance = new chesslib.Game(customBoard, whiteController, blackController);
+            
+            // If computer plays as white and it's the first move, start auto play
+            if (UseRandomControllerForWhite && GameInstance.CurrentTurn == PieceColor.White)
+            {
+                ProcessNextComputerMove();
+            }
+            
             StateHasChanged();
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error setting up custom position: {ex.Message}");
             // Fall back to standard game
-            GameInstance = new chesslib.Game();
+            CreateNewGameWithControllers();
         }
+    }
+    
+    private async void ProcessNextComputerMove()
+    {
+        if (GameInstance.IsGameOver) return;
+        
+        isProcessingAutoMove = true;
+        StateHasChanged();
+        
+        try
+        {
+            // Ask the game to request a move from the current controller
+            bool moveSuccessful = await GameInstance.RequestAndExecuteNextMoveAsync();
+            
+            if (!moveSuccessful)
+            {
+                Console.WriteLine("Computer could not make a move");
+                return;
+            }
+            
+            // If AutoPlay is enabled, schedule the next move
+            if (AutoPlayEnabled && !GameInstance.IsGameOver)
+            {
+                PieceColor nextTurn = GameInstance.CurrentTurn;
+                bool isComputerTurn = 
+                    (nextTurn == PieceColor.White && UseRandomControllerForWhite) ||
+                    (nextTurn == PieceColor.Black && UseRandomControllerForBlack);
+                    
+                if (isComputerTurn)
+                {
+                    // Add a small delay to make it feel more natural
+                    await Task.Delay(500);
+                    ProcessNextComputerMove();
+                }
+            }
+        }
+        finally
+        {
+            isProcessingAutoMove = false;
+            StateHasChanged();
+        }
+    }
+    
+    private void StartAutoPlay()
+    {
+        _autoPlayEnabled = true;
+        
+        // Start the auto play if it's currently a computer's turn
+        PieceColor currentTurn = GameInstance.CurrentTurn;
+        bool isComputerTurn = 
+            (currentTurn == PieceColor.White && UseRandomControllerForWhite) ||
+            (currentTurn == PieceColor.Black && UseRandomControllerForBlack);
+            
+        if (isComputerTurn)
+        {
+            ProcessNextComputerMove();
+        }
+    }
+    
+    private void StopAutoPlay()
+    {
+        _autoPlayEnabled = false;
     }
 
     private void ParseSimplePosition(chesslib.Board board, string position)
