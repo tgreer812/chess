@@ -17,14 +17,18 @@
         </div>
         <div class="board-container">
             <div class="chess-board">
-                @for (int row = 0; row < Board.BoardSize; row++)
+                @for (int row = 0; row < chesslib.Board.BoardSize; row++)
                 {
-                    @for (int col = 0; col < Board.BoardSize; col++)
+                    @for (int col = 0; col < chesslib.Board.BoardSize; col++)
                     {
-                        var square = BoardModel.GetSquare(row, col);
-                        <div class="square @(square.Color == SquareColor.Light ? "light" : "dark")" 
+                        var square = GameInstance.Board.GetSquare(row, col);
+                        <div class="square @(square.Color == chesslib.SquareColor.Light ? "light" : "dark") @(IsSquareSelected(square) ? "selected" : "")" 
                              data-position="@square.AlgebraicPosition"
                              @onclick="() => SquareClicked(square)">
+                            @if (square.Piece != null)
+                            {
+                                <img src="@GetPieceImagePath(square.Piece)" class="piece-image" alt="@square.Piece.ToString()" />
+                            }
                         </div>
                     }
                 }
@@ -41,17 +45,88 @@
             </div>
         </div>
     </div>
+    <div class="game-info">
+        <p>Current Turn: @GameInstance.CurrentTurn</p>
+        <p>Move Count: @GameInstance.MoveHistory.Count</p>
+        @if (selectedSquare != null)
+        {
+            <p>Selected: @selectedSquare.AlgebraicPosition</p>
+        }
+    </div>
 </div>
 
 @code {
-    private Board BoardModel { get; set; } = new Board();
+    private chesslib.Game GameInstance { get; set; } = new chesslib.Game();
+    private chesslib.Square? selectedSquare = null;
 
     [Parameter]
-    public EventCallback<Square> OnSquareClicked { get; set; }
+    public EventCallback<chesslib.Square> OnSquareClicked { get; set; }
 
-    private void SquareClicked(Square square)
+    private bool IsSquareSelected(chesslib.Square square)
+    {
+        return selectedSquare != null && selectedSquare.Row == square.Row && selectedSquare.Column == square.Column;
+    }
+
+    private void SquareClicked(chesslib.Square square)
     {
         Console.WriteLine($"Square clicked: {square.AlgebraicPosition}");
+        
+        if (selectedSquare == null)
+        {
+            // First click - select piece if there is one
+            if (square.Piece != null && square.Piece.Color == GameInstance.CurrentTurn)
+            {
+                selectedSquare = square;
+            }
+        }
+        else
+        {
+            // Second click - try to move
+            if (selectedSquare == square)
+            {
+                // Clicking same square deselects
+                selectedSquare = null;
+            }
+            else
+            {
+                // Try to make the move
+                bool moveSuccessful = GameInstance.TryMove(selectedSquare, square);
+                if (moveSuccessful)
+                {
+                    Console.WriteLine($"Move made: {selectedSquare.AlgebraicPosition} to {square.AlgebraicPosition}");
+                }
+                else
+                {
+                    Console.WriteLine($"Invalid move: {selectedSquare.AlgebraicPosition} to {square.AlgebraicPosition}");
+                }
+                selectedSquare = null;
+            }
+        }
+        
         OnSquareClicked.InvokeAsync(square);
+        StateHasChanged();
+    }
+
+    private string GetPieceImagePath(chesslib.Piece piece)
+    {
+        string color = piece.Color == chesslib.PieceColor.White ? "white" : "black";
+        string pieceType = GetPieceTypeName(piece);
+        
+        return $"assets/{pieceType}_{color}.png";
+    }
+
+    private string GetPieceTypeName(chesslib.Piece piece)
+    {
+        string typeName = piece.GetType().Name.ToLower();
+        return typeName switch
+        {
+            "rook" => "rook",
+            "knight" => "knight",
+            "bishop" => "bishop",
+            "queen" => "queen",
+            "king" => "king",
+            "pawn" => "pawn",
+            _ => "pawn"
+        };
     }
 }

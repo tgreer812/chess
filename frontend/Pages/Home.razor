@@ -1,5 +1,4 @@
 ﻿@page "/"
-@using chesslib
 
 <PageTitle>Chess Project</PageTitle>
 
@@ -24,7 +23,7 @@
 </div>
 
 @code {
-    private bool showChessBoard = false;
+    private bool showChessBoard = true; // Start with chess board shown
     private string selectedSquare = string.Empty;
 
     private void ToggleChessBoard()
@@ -32,7 +31,7 @@
         showChessBoard = !showChessBoard;
     }
     
-    private void HandleSquareClicked(Square square)
+    private void HandleSquareClicked(chesslib.Square square)
     {
         selectedSquare = square.AlgebraicPosition;
         StateHasChanged();
