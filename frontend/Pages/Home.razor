@@ -1,26 +1,58 @@
 ﻿@page "/"
 
-<PageTitle>Chess Project</PageTitle>
+<PageTitle>Chess Academy - Master Chess Online</PageTitle>
 
-<div class="home-container">
-    <h1>Chess Project</h1>
-    
-    <ChessBoard OnSquareClicked="HandleSquareClicked" />
-    
-    @if (!string.IsNullOrEmpty(selectedSquare))
-    {
-        <div class="square-info">
-            Selected Square: @selectedSquare
+<div class="hero-section">
+    <div class="hero-content">
+        <h1 class="hero-title">Welcome to Chess Academy</h1>
+        <p class="hero-subtitle">Master chess through interactive lessons, puzzles, and practice</p>
+        <div class="hero-buttons">
+            <a href="/learn" class="btn btn-primary">Start Learning</a>
+            <a href="/game" class="btn btn-secondary">Practice Board</a>
         </div>
-    }
+    </div>
+    <div class="hero-board">
+        <ChessBoard StartingPosition="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR" />
+    </div>
+</div>
+
+<div class="features-section">
+    <h2>Your Path to Chess Mastery</h2>
+    <div class="features-grid">
+        <div class="feature-card">
+            <div class="feature-icon">♟️</div>
+            <h3>Learn the Basics</h3>
+            <p>Master piece movements, board coordinates, and fundamental rules</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">📚</div>
+            <h3>Study Openings</h3>
+            <p>Explore popular openings and build your opening repertoire</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">⚔️</div>
+            <h3>Tactics Training</h3>
+            <p>Sharpen your tactical vision with puzzles and patterns</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">👑</div>
+            <h3>Master Endgames</h3>
+            <p>Learn essential endgame techniques and checkmate patterns</p>
+        </div>
+    </div>
+</div>
+
+<div class="progress-section">
+    <h2>Track Your Progress</h2>
+    <p>Coming soon: Earn badges, complete challenges, and level up your chess skills!</p>
+    <div class="progress-preview">
+        <div class="badge-preview">🏆</div>
+        <div class="badge-preview">🎯</div>
+        <div class="badge-preview">⭐</div>
+        <div class="badge-preview">🔥</div>
+    </div>
 </div>
 
 @code {
-    private string selectedSquare = string.Empty;
-    
-    private void HandleSquareClicked(chesslib.Square square)
-    {
-        selectedSquare = square.AlgebraicPosition;
-        StateHasChanged();
-    }
+    // Future: Add user progress tracking
 }

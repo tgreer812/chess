@@ -1,62 +1,198 @@
-/* Home.razor.css - Scoped styles for the Home page */
+/* Home.razor.css - Chess Academy Landing Page */
 
-.home-container {
-    display: flex;
-    flex-direction: column;
+/* Add a container to ensure proper padding at the top of the page */
+:host {
+    display: block;
+    padding-top: 2rem; /* Provide space at the top */
+}
+
+.hero-section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4rem;
     align-items: center;
-    justify-content: center;
-    height: 100%;
+    min-height: 80vh;
+    padding: 4rem 2rem;  /* Increased padding at the top */
+    max-width: 1200px;
+    margin: 0 auto;
+    margin-top: 2rem;  /* Added margin at the top to push content down */
+}
+
+.hero-content {
+    text-align: left;
+}
+
+.hero-title {
+    font-size: 3.5rem;
+    font-weight: 300;
+    color: #ffffff;
+    margin-bottom: 1rem;
+    line-height: 1.2;
+    background: linear-gradient(135deg, #ffffff 0%, #cccccc 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.hero-subtitle {
+    font-size: 1.5rem;
+    color: #b0b0b0;
+    margin-bottom: 2rem;
+    line-height: 1.5;
+}
+
+.hero-buttons {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.btn {
+    padding: 14px 32px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 1.1rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    display: inline-block;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #4a9eff 0%, #2c7be5 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(74, 158, 255, 0.3);
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 25px rgba(74, 158, 255, 0.4);
+}
+
+.btn-secondary {
+    background: transparent;
+    color: #4a9eff;
+    border: 2px solid #4a9eff;
+}
+
+.btn-secondary:hover {
+    background: rgba(74, 158, 255, 0.1);
+    transform: translateY(-2px);
+}
+
+.hero-board {
+    transform: scale(0.8);
+    opacity: 0.9;
+}
+
+.features-section {
+    padding: 4rem 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
     text-align: center;
 }
 
-h1 {
-    color: #e0e0e0;
-    margin-bottom: 2rem;
+.features-section h2 {
     font-size: 2.5rem;
-    font-weight: 200;
-    letter-spacing: 4px;
-    text-transform: uppercase;
+    color: #ffffff;
+    margin-bottom: 3rem;
+    font-weight: 300;
 }
 
-.show-chess-button {
-    background: linear-gradient(145deg, #2a2a2a, #1a1a1a);
-    color: #e0e0e0;
-    border: none;
-    padding: 12px 24px;
-    font-size: 1rem;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3),
-                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+.features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 2rem;
 }
 
-.show-chess-button:hover {
-    background: linear-gradient(145deg, #3a3a3a, #2a2a2a);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4),
-                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+.feature-card {
+    background: linear-gradient(145deg, #1a1a1a, #0f0f0f);
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    transition: transform 0.3s ease;
 }
 
-.show-chess-button:active {
-    transform: translateY(0);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4),
-                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+.feature-card:hover {
+    transform: translateY(-5px);
 }
 
-.square-info {
-    margin-top: 1.5rem;
-    padding: 12px 20px;
-    background: linear-gradient(145deg, #222, #111);
-    color: #e0e0e0;
-    border-radius: 8px;
-    font-size: 1.1rem;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3),
-                inset 0 1px 0 rgba(255, 255, 255, 0.05);
-    animation: fadeIn 0.3s ease;
+.feature-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
 }
 
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+.feature-card h3 {
+    color: #ffffff;
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    font-weight: 400;
+}
+
+.feature-card p {
+    color: #b0b0b0;
+    line-height: 1.6;
+}
+
+.progress-section {
+    padding: 4rem 2rem;
+    max-width: 800px;
+    margin: 0 auto;
+    text-align: center;
+    border-top: 1px solid #333;
+}
+
+.progress-section h2 {
+    font-size: 2rem;
+    color: #ffffff;
+    margin-bottom: 1rem;
+    font-weight: 300;
+}
+
+.progress-section p {
+    color: #b0b0b0;
+    font-size: 1.2rem;
+    margin-bottom: 2rem;
+}
+
+.progress-preview {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+}
+
+.badge-preview {
+    font-size: 3rem;
+    opacity: 0.3;
+    transition: opacity 0.3s ease;
+}
+
+.badge-preview:hover {
+    opacity: 0.6;
+}
+
+@media (max-width: 768px) {
+    .hero-section {
+        grid-template-columns: 1fr;
+        text-align: center;
+    }
+    
+    .hero-content {
+        text-align: center;
+    }
+    
+    .hero-title {
+        font-size: 2.5rem;
+    }
+    
+    .hero-subtitle {
+        font-size: 1.2rem;
+    }
+    
+    .hero-buttons {
+        justify-content: center;
+    }
+    
+    .hero-board {
+        display: none;
+    }
 }

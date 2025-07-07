@@ -1,0 +1,39 @@
+@page "/game"
+
+<PageTitle>Play Chess - Chess Academy</PageTitle>
+
+<div class="game-container">
+    <h1>Practice Board</h1>
+    <p class="game-subtitle">Practice your moves on a free play board</p>
+    
+    <ChessBoard OnSquareClicked="HandleSquareClicked" />
+    
+    @if (!string.IsNullOrEmpty(selectedSquare))
+    {
+        <div class="square-info">
+            Selected Square: @selectedSquare
+        </div>
+    }
+    
+    <div class="game-controls">
+        <button class="control-btn" @onclick="ResetBoard">Reset Board</button>
+    </div>
+</div>
+
+@code {
+    private string selectedSquare = string.Empty;
+    
+    private void HandleSquareClicked(chesslib.Square square)
+    {
+        selectedSquare = square.AlgebraicPosition;
+        StateHasChanged();
+    }
+    
+    private void ResetBoard()
+    {
+        // For now, just clear the selection
+        // In the future, this would reset the board to starting position
+        selectedSquare = string.Empty;
+        StateHasChanged();
+    }
+}

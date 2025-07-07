@@ -1,5 +1,15 @@
 /* ChessBoard.razor.css - Scoped styles for the ChessBoard component */
 
+/* Scale down the chess board in hero section */
+:host ::deep .hero-board & {
+    transform: scale(0.85);
+    margin: 0 auto;
+}
+
+.container {
+    text-align: center;
+}
+
 .chess-container {
     text-align: center;
     background: linear-gradient(145deg, #1a1a1a, #0f0f0f);
@@ -21,8 +31,30 @@ h1 {
 
 .chess-board-wrapper {
     display: flex;
-    align-items: flex-start;
+    flex-direction: row;
+    align-items: center;
     justify-content: center;
+    background-color: #2d2d2d;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.coordinates-left {
+    display: flex;
+    flex-direction: column;
+    margin-right: 8px;
+    font-size: 14px;
+    color: #ccc;
+    font-weight: bold;
+}
+
+.coordinates-left div {
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
 }
 
 .board-container {
@@ -34,10 +66,7 @@ h1 {
     display: grid;
     grid-template-columns: repeat(8, 60px);
     grid-template-rows: repeat(8, 60px);
-    border: 3px solid #2a2a2a;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.9),
-                inset 0 0 20px rgba(0, 0, 0, 0.5);
-    background: #1a1a1a;
+    border: 2px solid #8B4513;
 }
 
 .square {
@@ -46,67 +75,60 @@ h1 {
     display: flex;
     align-items: center;
     justify-content: center;
+    cursor: pointer;
     position: relative;
-    transition: all 0.2s ease;
+    transition: background-color 0.2s ease;
 }
 
 .square.light {
-    background: linear-gradient(145deg, #4a4a4a, #3a3a3a);
-    box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.1),
-                inset 0 -1px 2px rgba(0, 0, 0, 0.3);
+    background-color: #f0d9b5;
 }
 
 .square.dark {
-    background: linear-gradient(145deg, #1f1f1f, #141414);
-    box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.05),
-                inset 0 -1px 2px rgba(0, 0, 0, 0.5);
+    background-color: #b58863;
 }
 
-.coordinates-left,
+.square:hover {
+    filter: brightness(1.1);
+}
+
+.square.selected {
+    background-color: #ffff99 !important;
+    box-shadow: inset 0 0 0 3px #ff0000;
+}
+
+.piece-image {
+    width: 50px;
+    height: 50px;
+    pointer-events: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
 .coordinates-bottom {
     display: flex;
-    color: #808080;
-    font-weight: 600;
+    flex-direction: row;
+    margin-top: 8px;
     font-size: 14px;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
-}
-
-.coordinates-left {
-    flex-direction: column;
-    margin-right: 10px;
-}
-
-.coordinates-left div {
-    height: 60px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 20px;
-}
-
-.coordinates-bottom {
-    margin-top: 10px;
+    color: #ccc;
+    font-weight: bold;
 }
 
 .coordinates-bottom div {
     width: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.game-info {
+    margin-top: 20px;
     text-align: center;
+    color: #e0e0e0;
 }
 
-/* Hover effect for squares - stone-like glow */
-.square:hover {
-    transform: translateZ(2px);
-    box-shadow: 0 0 15px rgba(255, 255, 255, 0.1),
-                inset 0 0 10px rgba(255, 255, 255, 0.05);
-    cursor: pointer;
-}
-
-.square.light:hover {
-    background: linear-gradient(145deg, #5a5a5a, #4a4a4a);
-}
-
-.square.dark:hover {
-    background: linear-gradient(145deg, #2a2a2a, #1a1a1a);
+.game-info p {
+    margin: 5px 0;
 }
 
 /* Responsive design */
@@ -119,6 +141,11 @@ h1 {
     .square {
         width: 40px;
         height: 40px;
+    }
+    
+    .piece-image {
+        width: 35px;
+        height: 35px;
     }
     
     .coordinates-left div {
