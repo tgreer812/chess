@@ -1,0 +1,164 @@
+@page "/test"
+
+<PageTitle>Chess Board Test</PageTitle>
+
+<div class="test-container">
+    <h1>Chess Board Test</h1>
+    
+    <div class="test-controls">
+        <h3>Board Position Setup</h3>
+        <p>Choose a preset or create a custom position:</p>
+        
+        <div class="preset-buttons">
+            <button @onclick="LoadStandardPreset" class="preset-btn">Standard Game</button>
+            <button @onclick="LoadEndgamePreset" class="preset-btn">King & Queen vs King</button>
+            <button @onclick="LoadScholarPreset" class="preset-btn">Scholar's Mate</button>
+            <button @onclick="LoadEmptyPreset" class="preset-btn">Empty Board</button>
+        </div>
+        
+        <div class="custom-input">
+            <h4>Custom Position (Simple Format)</h4>
+            <p>Format: square:piece,square:piece (e.g., e4:wpawn,d5:bknight)</p>
+            <p>Pieces: wpawn, bpawn, wrook, brook, wknight, bknight, wbishop, bbishop, wqueen, bqueen, wking, bking</p>
+            <textarea @bind="customPosition" @oninput="OnCustomPositionChanged" 
+                      placeholder="e.g., e1:wking,e8:bking,d1:wqueen,h7:bpawn" 
+                      rows="3" cols="80"></textarea>
+            <button @onclick="LoadCustomPosition" class="load-btn">Load Custom Position</button>
+            
+            <div class="examples">
+                <h5>Quick Examples:</h5>
+                <button @onclick="LoadEndgameExample" class="example-btn">Endgame: e1:wking,e8:bking,d1:wqueen</button>
+                <button @onclick="LoadPawnExample" class="example-btn">Pawn Demo: e2:wpawn,e7:bpawn,e1:wking,e8:bking</button>
+                <button @onclick="LoadComplexExample" class="example-btn">Complex: e1:wking,e8:bking,d1:wqueen,d8:bqueen,a1:wrook,h8:brook</button>
+            </div>
+        </div>
+        
+        <div class="fen-input">
+            <h4>FEN Position</h4>
+            <p>Enter a FEN string (piece placement only):</p>
+            <input type="text" @bind="fenPosition" @oninput="OnFenPositionChanged" 
+                   placeholder="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR" 
+                   style="width: 400px;" />
+            <button @onclick="LoadFenPosition" class="load-btn">Load FEN</button>
+        </div>
+    </div>
+    
+    <div class="board-display">
+        <ChessBoard StartingPosition="@currentPosition" OnSquareClicked="HandleSquareClicked" />
+        
+        @if (!string.IsNullOrEmpty(selectedSquare))
+        {
+            <div class="square-info">
+                Selected Square: @selectedSquare
+            </div>
+        }
+        
+        <div class="position-info">
+            <h4>Current Position String:</h4>
+            <p class="position-string">@currentPosition</p>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string currentPosition = "";
+    private string customPosition = "";
+    private string fenPosition = "";
+    private string selectedSquare = string.Empty;
+
+    protected override void OnInitialized()
+    {
+        // Start with standard position
+        LoadPreset("standard");
+    }
+
+    private void LoadStandardPreset()
+    {
+        LoadPreset("standard");
+    }
+
+    private void LoadEndgamePreset()
+    {
+        LoadPreset("endgame");
+    }
+
+    private void LoadScholarPreset()
+    {
+        LoadPreset("scholar");
+    }
+
+    private void LoadEmptyPreset()
+    {
+        LoadPreset("empty");
+    }
+
+    private void LoadEndgameExample()
+    {
+        customPosition = "e1:wking,e8:bking,d1:wqueen";
+        LoadCustomPosition();
+    }
+
+    private void LoadPawnExample()
+    {
+        customPosition = "e2:wpawn,e7:bpawn,e1:wking,e8:bking";
+        LoadCustomPosition();
+    }
+
+    private void LoadComplexExample()
+    {
+        customPosition = "e1:wking,e8:bking,d1:wqueen,d8:bqueen,a1:wrook,h8:brook";
+        LoadCustomPosition();
+    }
+
+    private void LoadPreset(string preset)
+    {
+        currentPosition = preset switch
+        {
+            "standard" => "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR",
+            "endgame" => "a1:wking,h8:bking,d1:wqueen",
+            "scholar" => "e1:wking,e8:bking,d1:wqueen,d8:bqueen,f1:wbishop,c5:bbishop,g1:wknight,b8:bknight,a7:bpawn,b7:bpawn,c7:bpawn,g7:bpawn,h7:bpawn,a2:wpawn,b2:wpawn,c2:wpawn,g2:wpawn,h2:wpawn",
+            "empty" => "",
+            _ => "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"
+        };
+        
+        customPosition = "";
+        fenPosition = "";
+        StateHasChanged();
+    }
+
+    private void LoadCustomPosition()
+    {
+        if (!string.IsNullOrWhiteSpace(customPosition))
+        {
+            currentPosition = customPosition.Trim();
+            fenPosition = "";
+            StateHasChanged();
+        }
+    }
+
+    private void LoadFenPosition()
+    {
+        if (!string.IsNullOrWhiteSpace(fenPosition))
+        {
+            currentPosition = fenPosition.Trim();
+            customPosition = "";
+            StateHasChanged();
+        }
+    }
+
+    private void OnCustomPositionChanged(ChangeEventArgs e)
+    {
+        customPosition = e.Value?.ToString() ?? "";
+    }
+
+    private void OnFenPositionChanged(ChangeEventArgs e)
+    {
+        fenPosition = e.Value?.ToString() ?? "";
+    }
+
+    private void HandleSquareClicked(chesslib.Square square)
+    {
+        selectedSquare = square.AlgebraicPosition;
+        StateHasChanged();
+    }
+}

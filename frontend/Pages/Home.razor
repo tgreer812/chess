@@ -5,31 +5,18 @@
 <div class="home-container">
     <h1>Chess Project</h1>
     
-    @if (showChessBoard)
+    <ChessBoard OnSquareClicked="HandleSquareClicked" />
+    
+    @if (!string.IsNullOrEmpty(selectedSquare))
     {
-        <ChessBoard OnSquareClicked="HandleSquareClicked" />
-        
-        @if (!string.IsNullOrEmpty(selectedSquare))
-        {
-            <div class="square-info">
-                Selected Square: @selectedSquare
-            </div>
-        }
-    }
-    else
-    {
-        <button @onclick="ToggleChessBoard" class="show-chess-button">Show Chess Board</button>
+        <div class="square-info">
+            Selected Square: @selectedSquare
+        </div>
     }
 </div>
 
 @code {
-    private bool showChessBoard = true; // Start with chess board shown
     private string selectedSquare = string.Empty;
-
-    private void ToggleChessBoard()
-    {
-        showChessBoard = !showChessBoard;
-    }
     
     private void HandleSquareClicked(chesslib.Square square)
     {

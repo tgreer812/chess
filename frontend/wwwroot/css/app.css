@@ -253,3 +253,153 @@ code {
     min-height: 100vh;
     padding: 20px;
 }
+
+/* Test page styling */
+.test-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    min-height: 100vh;
+}
+
+.test-controls {
+    background-color: #1a1a1a;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 30px;
+    width: 100%;
+    max-width: 800px;
+    color: #e0e0e0;
+}
+
+.test-controls h3, .test-controls h4 {
+    color: #ffffff;
+    margin-bottom: 10px;
+}
+
+.test-controls p {
+    margin-bottom: 15px;
+    color: #ccc;
+}
+
+.preset-buttons {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 25px;
+    flex-wrap: wrap;
+}
+
+.preset-btn {
+    padding: 8px 16px;
+    background-color: #2d4a7a;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.preset-btn:hover {
+    background-color: #3d5a8a;
+}
+
+.custom-input, .fen-input {
+    margin-bottom: 20px;
+    padding: 15px;
+    background-color: #2d2d2d;
+    border-radius: 4px;
+}
+
+.custom-input textarea {
+    width: 100%;
+    background-color: #1a1a1a;
+    color: #e0e0e0;
+    border: 1px solid #555;
+    border-radius: 4px;
+    padding: 8px;
+    font-family: monospace;
+    margin-bottom: 10px;
+}
+
+.fen-input input {
+    background-color: #1a1a1a;
+    color: #e0e0e0;
+    border: 1px solid #555;
+    border-radius: 4px;
+    padding: 8px;
+    font-family: monospace;
+    margin-bottom: 10px;
+}
+
+.load-btn {
+    padding: 8px 16px;
+    background-color: #26b050;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.load-btn:hover {
+    background-color: #20a044;
+}
+
+.examples {
+    margin-top: 15px;
+    padding: 10px;
+    background-color: #1a1a1a;
+    border-radius: 4px;
+}
+
+.examples h5 {
+    color: #ffffff;
+    margin-bottom: 10px;
+}
+
+.example-btn {
+    padding: 6px 12px;
+    background-color: #444;
+    color: #e0e0e0;
+    border: 1px solid #666;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-right: 8px;
+    margin-bottom: 5px;
+    font-size: 12px;
+    transition: background-color 0.2s ease;
+}
+
+.example-btn:hover {
+    background-color: #555;
+}
+
+.board-display {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.position-info {
+    margin-top: 20px;
+    background-color: #1a1a1a;
+    padding: 15px;
+    border-radius: 4px;
+    max-width: 600px;
+    text-align: center;
+}
+
+.position-info h4 {
+    color: #ffffff;
+    margin-bottom: 10px;
+}
+
+.position-string {
+    font-family: monospace;
+    color: #e0e0e0;
+    background-color: #333;
+    padding: 10px;
+    border-radius: 4px;
+    word-break: break-all;
+}

@@ -62,6 +62,25 @@
     [Parameter]
     public EventCallback<chesslib.Square> OnSquareClicked { get; set; }
 
+    [Parameter]
+    public string? StartingPosition { get; set; }
+
+    protected override void OnInitialized()
+    {
+        if (!string.IsNullOrEmpty(StartingPosition))
+        {
+            SetupCustomPosition(StartingPosition);
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (!string.IsNullOrEmpty(StartingPosition))
+        {
+            SetupCustomPosition(StartingPosition);
+        }
+    }
+
     private bool IsSquareSelected(chesslib.Square square)
     {
         return selectedSquare != null && selectedSquare.Row == square.Row && selectedSquare.Column == square.Column;
@@ -128,5 +147,126 @@
             "pawn" => "pawn",
             _ => "pawn"
         };
+    }
+
+    private void SetupCustomPosition(string position)
+    {
+        try
+        {
+            // Create a new board with the custom position
+            var customBoard = new chesslib.Board();
+            
+            // Parse the position string - expecting format like "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w"
+            // For simplicity, we'll support a basic format: piece positions separated by commas
+            // Format: "square:piece,square:piece,..." e.g., "e4:wpawn,d5:bknight"
+            
+            if (position.Contains('/'))
+            {
+                // FEN-like format (simplified)
+                ParseFenPosition(customBoard, position);
+            }
+            else
+            {
+                // Simple format: "square:piece,square:piece"
+                ParseSimplePosition(customBoard, position);
+            }
+            
+            // Create a new game with the custom board
+            GameInstance = new chesslib.Game(customBoard);
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error setting up custom position: {ex.Message}");
+            // Fall back to standard game
+            GameInstance = new chesslib.Game();
+        }
+    }
+
+    private void ParseSimplePosition(chesslib.Board board, string position)
+    {
+        var pieces = position.Split(',', StringSplitOptions.RemoveEmptyEntries);
+        
+        foreach (var pieceStr in pieces)
+        {
+            var parts = pieceStr.Trim().Split(':');
+            if (parts.Length != 2) continue;
+            
+            var square = parts[0].Trim().ToLower();
+            var pieceInfo = parts[1].Trim().ToLower();
+            
+            // Parse piece info: first character is color (w/b), rest is piece type
+            if (pieceInfo.Length < 2) continue;
+            
+            var color = pieceInfo[0] == 'w' ? chesslib.PieceColor.White : chesslib.PieceColor.Black;
+            var pieceType = pieceInfo.Substring(1);
+            
+            var pieceTypeEnum = pieceType switch
+            {
+                "pawn" => chesslib.PieceFactory.PieceType.Pawn,
+                "rook" => chesslib.PieceFactory.PieceType.Rook,
+                "knight" => chesslib.PieceFactory.PieceType.Knight,
+                "bishop" => chesslib.PieceFactory.PieceType.Bishop,
+                "queen" => chesslib.PieceFactory.PieceType.Queen,
+                "king" => chesslib.PieceFactory.PieceType.King,
+                _ => chesslib.PieceFactory.PieceType.Pawn
+            };
+            
+            try
+            {
+                var boardSquare = board.GetSquare(square);
+                boardSquare.Piece = chesslib.PieceFactory.CreatePiece(pieceTypeEnum, color);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error placing piece {pieceInfo} on {square}: {ex.Message}");
+            }
+        }
+    }
+
+    private void ParseFenPosition(chesslib.Board board, string fen)
+    {
+        // Simple FEN parsing - just the piece placement part
+        var parts = fen.Split(' ');
+        var piecePlacement = parts[0];
+        var ranks = piecePlacement.Split('/');
+        
+        for (int rank = 0; rank < Math.Min(8, ranks.Length); rank++)
+        {
+            int file = 0;
+            foreach (char c in ranks[rank])
+            {
+                if (char.IsDigit(c))
+                {
+                    file += int.Parse(c.ToString());
+                }
+                else if (file < 8)
+                {
+                    var color = char.IsUpper(c) ? chesslib.PieceColor.White : chesslib.PieceColor.Black;
+                    var pieceType = char.ToLower(c) switch
+                    {
+                        'p' => chesslib.PieceFactory.PieceType.Pawn,
+                        'r' => chesslib.PieceFactory.PieceType.Rook,
+                        'n' => chesslib.PieceFactory.PieceType.Knight,
+                        'b' => chesslib.PieceFactory.PieceType.Bishop,
+                        'q' => chesslib.PieceFactory.PieceType.Queen,
+                        'k' => chesslib.PieceFactory.PieceType.King,
+                        _ => chesslib.PieceFactory.PieceType.Pawn
+                    };
+                    
+                    try
+                    {
+                        var square = board.GetSquare(rank, file);
+                        square.Piece = chesslib.PieceFactory.CreatePiece(pieceType, color);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error placing FEN piece {c} at {rank},{file}: {ex.Message}");
+                    }
+                    
+                    file++;
+                }
+            }
+        }
     }
 }
