@@ -158,7 +158,7 @@ namespace chesslib_test
         /// Tests that the HumanController's IsWaitingForMove property works correctly.
         /// </summary>
         [Fact]
-        public void HumanController_IsWaitingForMove_ReflectsState()
+        public async void HumanController_IsWaitingForMove_ReflectsState()
         {
             // Arrange
             var humanController = new HumanController();
@@ -175,9 +175,9 @@ namespace chesslib_test
             
             // Act - Provide a move
             humanController.SetNextMove("e2", "e4");
-            
+
             // Complete the task
-            moveTask.Wait();
+            await moveTask;
             
             // Assert - No longer waiting for a move
             Assert.False(humanController.IsWaitingForMove);
@@ -241,6 +241,27 @@ namespace chesslib_test
             // Verify the move is actually valid by attempting it
             bool moveResult = game.TryMove(move.Value.from, move.Value.to);
             Assert.True(moveResult);
+        }
+
+        /// <summary>
+        /// Tests that the game correctly requests moves from controllers.
+        /// </summary>
+        [Fact]
+        public async Task Game_RequestAndExecuteNextMoveAsync_CallsController()
+        {
+            // Arrange
+            var game = new Game();
+            var mockController = new TestHelpers.TestController(("e2", "e4"));
+            game.SetController(mockController, PieceColor.White);
+            
+            // Act
+            bool result = await game.RequestAndExecuteNextMoveAsync();
+            
+            // Assert
+            Assert.True(result);
+            Assert.Equal(PieceColor.Black, game.CurrentTurn); // Turn should have changed
+            Assert.Single(game.MoveHistory);
+            Assert.Equal("e2e4", game.MoveHistory[0].AlgebraicNotation);
         }
     }
 }

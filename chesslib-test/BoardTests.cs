@@ -127,19 +127,24 @@ namespace chesslib_test
         }
         
         [Fact]
-        public void GetSquare_InvalidAlgebraicPosition_ThrowsException()
+        public void Board_GetSquare_ThrowsExceptionForInvalidNotation()
         {
             // Arrange
             var board = new Board();
             
             // Act & Assert
+            // Test invalid algebraic notation
+            Assert.Throws<ArgumentException>(() => board.GetSquare("x5"));
+            Assert.Throws<ArgumentException>(() => board.GetSquare("e9"));
             Assert.Throws<ArgumentException>(() => board.GetSquare(""));
-            Assert.Throws<ArgumentException>(() => board.GetSquare("a"));
-            Assert.Throws<ArgumentException>(() => board.GetSquare("a0"));
-            Assert.Throws<ArgumentException>(() => board.GetSquare("a9"));
-            Assert.Throws<ArgumentException>(() => board.GetSquare("i1"));
+            Assert.Throws<ArgumentException>(() => board.GetSquare("e"));
+            Assert.Throws<ArgumentException>(() => board.GetSquare("5"));
+            Assert.Throws<ArgumentException>(() => board.GetSquare("   "));
+            
+            // The null check needs to be handled differently for non-nullable reference types
+            Assert.Throws<ArgumentException>(() => board.GetSquare(null!));
         }
-        
+
         [Fact]
         public void Board_CustomConstructor_WithInvalidDimensions_ThrowsException()
         {
@@ -153,7 +158,7 @@ namespace chesslib_test
                     tooFewRows[i].Add(new Square(i, j, SquareColor.Light));
                 }
             }
-            
+
             var wrongColumnCount = new List<List<Square>>();
             for (int i = 0; i < Board.BoardSize; i++)
             {
@@ -163,11 +168,13 @@ namespace chesslib_test
                     wrongColumnCount[i].Add(new Square(i, j, SquareColor.Light));
                 }
             }
-            
+
             // Act & Assert
+#pragma warning disable CS8625            
             Assert.Throws<ArgumentNullException>(() => new Board(null));
             Assert.Throws<ArgumentException>(() => new Board(tooFewRows));
             Assert.Throws<ArgumentException>(() => new Board(wrongColumnCount));
+#pragma warning restore CS8625            
         }
     }
 }

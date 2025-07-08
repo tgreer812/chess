@@ -166,19 +166,16 @@
     {
         Console.WriteLine($"Square clicked: {square.AlgebraicPosition}");
         
-        // Handle the case when it's a human's turn
         bool isHumanTurn = 
             (GameInstance.CurrentTurn == PieceColor.White && !UseRandomControllerForWhite) ||
             (GameInstance.CurrentTurn == PieceColor.Black && !UseRandomControllerForBlack);
             
         if (isHumanTurn)
         {
-            // Get the appropriate human controller
             var humanController = GameInstance.CurrentTurn == PieceColor.White ? _humanWhite : _humanBlack;
             
             if (selectedSquare == null)
             {
-                // First click - select piece if it's valid
                 if (square.Piece != null && square.Piece.Color == GameInstance.CurrentTurn)
                 {
                     selectedSquare = square;
@@ -187,10 +184,8 @@
             }
             else
             {
-                // Second click - try to make the move
                 if (selectedSquare == square)
                 {
-                    // Clicking the same square deselects it
                     Console.WriteLine($"Deselecting piece at {selectedSquare.AlgebraicPosition}");
                     selectedSquare = null;
                 }
@@ -198,31 +193,32 @@
                 {
                     Console.WriteLine($"Attempting move from {selectedSquare.AlgebraicPosition} to {square.AlgebraicPosition}");
                     
-                    // Store the from/to positions
+                    // Get validation feedback before attempting the move
+                    var validationResult = GameInstance.ValidateMove(selectedSquare, square);
+                    if (!string.IsNullOrEmpty(validationResult.Feedback))
+                    {
+                        Console.WriteLine($"Move feedback: {validationResult.Feedback}");
+                    }
+                    
                     var fromPos = selectedSquare.AlgebraicPosition;
                     var toPos = square.AlgebraicPosition;
                     
-                    // Reset the selection immediately to avoid visual confusion
                     selectedSquare = null;
                     
-                    // Send the move to the human controller
                     humanController.SetNextMove(fromPos, toPos);
                     
-                    // Request the move through the game's controller system
                     bool moveSuccessful = await GameInstance.RequestAndExecuteNextMoveAsync();
                     
                     if (moveSuccessful)
                     {
                         Console.WriteLine($"Move successful: {fromPos} to {toPos}");
                         
-                        // Check if it's now the computer's turn and auto play is enabled
                         if (!GameInstance.IsGameOver && 
                             ((GameInstance.CurrentTurn == PieceColor.White && UseRandomControllerForWhite) ||
                             (GameInstance.CurrentTurn == PieceColor.Black && UseRandomControllerForBlack)))
                         {
                             if (AutoPlayEnabled)
                             {
-                                // Add a small delay to make the computer move more natural
                                 await Task.Delay(300);
                                 ProcessNextComputerMove();
                             }
@@ -237,14 +233,13 @@
         }
         else
         {
-            // It's the computer's turn, don't allow human interaction
             Console.WriteLine("It's the computer's turn");
         }
         
         await OnSquareClicked.InvokeAsync(square);
         StateHasChanged();
     }
-
+    
     private string GetPieceImagePath(chesslib.Piece piece)
     {
         string color = piece.Color == chesslib.PieceColor.White ? "white" : "black";

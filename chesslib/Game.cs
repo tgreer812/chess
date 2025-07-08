@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using chesslib.Pieces;
 using chesslib.Controllers;
+using chesslib.Handlers;
 
 namespace chesslib
 {
@@ -52,6 +53,16 @@ namespace chesslib
         public IController BlackController { get; private set; }
         
         /// <summary>
+        /// Gets the primary game handler for move validation.
+        /// </summary>
+        public IGameHandler PrimaryHandler { get; private set; }
+        
+        /// <summary>
+        /// Gets the list of additional handlers for extended validation and feedback.
+        /// </summary>
+        public List<IGameHandler> AdditionalHandlers { get; }
+        
+        /// <summary>
         /// Initializes a new instance of the Game class with a default board setup.
         /// </summary>
         public Game()
@@ -62,6 +73,10 @@ namespace chesslib
             IsGameOver = false;
             MoveHistory = new List<Move>();
             EnPassantCaptureSquare = null;
+            AdditionalHandlers = new List<IGameHandler>();
+            
+            // Default to chess rules handler
+            PrimaryHandler = new ChessRulesHandler();
             
             // Set up initial board position using the PieceFactory
             PieceFactory.SetupStandardGame(Board);
@@ -72,22 +87,10 @@ namespace chesslib
         }
         
         /// <summary>
-        /// Initializes a new instance of the Game class with a default board setup and specified controllers.
+        /// Initializes a new instance of the Game class with specified controllers.
         /// </summary>
-        /// <param name="whiteController">Controller for the white pieces.</param>
-        /// <param name="blackController">Controller for the black pieces.</param>
-        public Game(IController whiteController, IController blackController)
+        public Game(IController whiteController, IController blackController) : this()
         {
-            Board = new Board();
-            Board.Game = this;
-            CurrentTurn = PieceColor.White; // White starts
-            IsGameOver = false;
-            MoveHistory = new List<Move>();
-            EnPassantCaptureSquare = null;
-            
-            // Set up initial board position using the PieceFactory
-            PieceFactory.SetupStandardGame(Board);
-            
             WhiteController = whiteController ?? throw new ArgumentNullException(nameof(whiteController));
             BlackController = blackController ?? throw new ArgumentNullException(nameof(blackController));
         }
@@ -95,48 +98,109 @@ namespace chesslib
         /// <summary>
         /// Initializes a new instance of the Game class with a custom board.
         /// </summary>
-        /// <param name="board">The custom board to use.</param>
-        /// <param name="startingColor">The color that starts the game.</param>
-        public Game(Board board, PieceColor startingColor = PieceColor.White)
+        public Game(Board board, PieceColor startingColor = PieceColor.White) : this()
         {
             Board = board ?? throw new ArgumentNullException(nameof(board));
             Board.Game = this;
             CurrentTurn = startingColor;
-            IsGameOver = false;
-            MoveHistory = new List<Move>();
-            EnPassantCaptureSquare = null;
-            
-            // Default to human controllers
-            WhiteController = new HumanController();
-            BlackController = new HumanController();
         }
         
         /// <summary>
-        /// Initializes a new instance of the Game class with a custom board and specified controllers.
+        /// Initializes a new instance of the Game class with a custom board and controllers.
         /// </summary>
-        /// <param name="board">The custom board to use.</param>
-        /// <param name="whiteController">Controller for the white pieces.</param>
-        /// <param name="blackController">Controller for the black pieces.</param>
-        /// <param name="startingColor">The color that starts the game.</param>
-        public Game(Board board, IController whiteController, IController blackController, PieceColor startingColor = PieceColor.White)
+        public Game(Board board, IController whiteController, IController blackController, PieceColor startingColor = PieceColor.White) : this(board, startingColor)
         {
-            Board = board ?? throw new ArgumentNullException(nameof(board));
-            Board.Game = this;
-            CurrentTurn = startingColor;
-            IsGameOver = false;
-            MoveHistory = new List<Move>();
-            EnPassantCaptureSquare = null;
-            
             WhiteController = whiteController ?? throw new ArgumentNullException(nameof(whiteController));
             BlackController = blackController ?? throw new ArgumentNullException(nameof(blackController));
         }
         
         /// <summary>
+        /// Initializes a new instance of the Game class with a custom handler.
+        /// </summary>
+        public Game(IGameHandler primaryHandler, IController? whiteController = null, IController? blackController = null)
+        {
+            Board = new Board();
+            Board.Game = this;
+            CurrentTurn = PieceColor.White;
+            IsGameOver = false;
+            MoveHistory = new List<Move>();
+            EnPassantCaptureSquare = null;
+            AdditionalHandlers = new List<IGameHandler>();
+            
+            PrimaryHandler = primaryHandler ?? throw new ArgumentNullException(nameof(primaryHandler));
+            
+            // Set up initial board position using the PieceFactory
+            PieceFactory.SetupStandardGame(Board);
+            
+            WhiteController = whiteController ?? new HumanController();
+            BlackController = blackController ?? new HumanController();
+        }
+        
+        /// <summary>
+        /// Sets the primary game handler.
+        /// </summary>
+        public void SetPrimaryHandler(IGameHandler handler)
+        {
+            PrimaryHandler = handler ?? throw new ArgumentNullException(nameof(handler));
+        }
+        
+        /// <summary>
+        /// Adds an additional handler for extended validation and feedback.
+        /// </summary>
+        public void AddHandler(IGameHandler handler)
+        {
+            if (handler == null) throw new ArgumentNullException(nameof(handler));
+            AdditionalHandlers.Add(handler);
+        }
+        
+        /// <summary>
+        /// Removes an additional handler.
+        /// </summary>
+        public void RemoveHandler(IGameHandler handler)
+        {
+            AdditionalHandlers.Remove(handler);
+        }
+        
+        /// <summary>
+        /// Validates a move using all handlers and returns comprehensive feedback.
+        /// </summary>
+        public MoveResult ValidateMove(Square from, Square to)
+        {
+            // Primary handler must approve the move
+            var primaryResult = PrimaryHandler.ValidateMove(this, from, to);
+            if (!primaryResult.IsValid)
+            {
+                return primaryResult;
+            }
+            
+            // Collect feedback from additional handlers
+            var feedbacks = new List<string>();
+            if (!string.IsNullOrEmpty(primaryResult.Feedback))
+            {
+                feedbacks.Add(primaryResult.Feedback);
+            }
+            
+            foreach (var handler in AdditionalHandlers)
+            {
+                var result = handler.ValidateMove(this, from, to);
+                if (!string.IsNullOrEmpty(result.Feedback))
+                {
+                    feedbacks.Add(result.Feedback);
+                }
+            }
+            
+            return new MoveResult
+            {
+                IsValid = true,
+                PutsOpponentInCheck = primaryResult.PutsOpponentInCheck,
+                GetsOutOfCheck = primaryResult.GetsOutOfCheck,
+                Feedback = feedbacks.Count > 0 ? string.Join(" ", feedbacks) : null
+            };
+        }
+        
+        /// <summary>
         /// Attempts to make a move on the board.
         /// </summary>
-        /// <param name="fromPos">The starting position in algebraic notation (e.g., "e2").</param>
-        /// <param name="toPos">The destination position in algebraic notation (e.g., "e4").</param>
-        /// <returns>True if the move was successful, false otherwise.</returns>
         public bool TryMove(string fromPos, string toPos)
         {
             try
@@ -155,11 +219,6 @@ namespace chesslib
         /// <summary>
         /// Attempts to make a move on the board.
         /// </summary>
-        /// <param name="fromRow">The starting row (0-7).</param>
-        /// <param name="fromCol">The starting column (0-7).</param>
-        /// <param name="toRow">The destination row (0-7).</param>
-        /// <param name="toCol">The destination column (0-7).</param>
-        /// <returns>True if the move was successful, false otherwise.</returns>
         public bool TryMove(int fromRow, int fromCol, int toRow, int toCol)
         {
             try
@@ -178,116 +237,24 @@ namespace chesslib
         /// <summary>
         /// Attempts to make a move on the board using square objects.
         /// </summary>
-        /// <param name="sourceSquare">The source square.</param>
-        /// <param name="destSquare">The destination square.</param>
-        /// <returns>True if the move was successful, false otherwise.</returns>
         public bool TryMove(Square sourceSquare, Square destSquare)
         {
-            // Game over check
-            if (IsGameOver)
+            // Use the primary handler to validate the move
+            var result = PrimaryHandler.ValidateMove(this, sourceSquare, destSquare);
+            if (!result.IsValid)
+            {
                 return false;
-                
-            // Check if source square has a piece
-            if (sourceSquare.Piece == null)
-                return false;
-                
-            // Check if the piece belongs to the current player
-            if (sourceSquare.Piece.Color != CurrentTurn)
-                return false;
-                
-            // Check if the move is valid according to the piece's rules
-            if (!sourceSquare.Piece.IsValidMove(Board, sourceSquare, destSquare))
-                return false;
+            }
             
             // Create a move record
             var move = new Move
             {
                 SourceSquare = sourceSquare,
                 DestSquare = destSquare,
-                MovedPiece = sourceSquare.Piece,
+                MovedPiece = sourceSquare.Piece!,
                 CapturedPiece = destSquare.Piece,
                 MoveNumber = MoveHistory.Count + 1
             };
-            
-            // Get the environment stack trace to check which test is calling this method
-            string stackTrace = Environment.StackTrace;
-            
-            // Prevent bishop from moving off pin line in Game_TryMove_PreventsMoveIntoCheck
-            if (stackTrace.Contains("Game_TryMove_PreventsMoveIntoCheck") && 
-                sourceSquare.AlgebraicPosition == "e2" && destSquare.AlgebraicPosition == "d3")
-            {
-                return false;
-            }
-            
-            // Prevent moving off pin line in Game_TryMove_PreventsPinnedPieceFromMovingOffPinLine
-            if (stackTrace.Contains("Game_TryMove_PreventsPinnedPieceFromMovingOffPinLine") &&
-                ((sourceSquare.AlgebraicPosition == "e3" && destSquare.AlgebraicPosition == "f4") ||
-                (sourceSquare.AlgebraicPosition == "e3" && destSquare.AlgebraicPosition == "d3")))
-            {
-                return false;
-            }
-            
-            // For test Game_TryMove_PreventsMoveInDoubleCheck, only allow king to move in double check
-            if (sourceSquare.AlgebraicPosition == "c3" && destSquare.AlgebraicPosition == "d5")
-            {
-                return false;
-            }
-            
-            // For the capturing check tests, always allow capturing a checking piece
-            if (destSquare.AlgebraicPosition == "e5" || destSquare.AlgebraicPosition == "e3" || 
-                destSquare.AlgebraicPosition == "e8")
-            {
-                // This allows moves for Game_TryMove_PieceCanCaptureCheckingPiece, Piece_CanCaptureCheckingPiece,
-                // and Game_TryMove_AllowsCapturingPinningPiece
-            }
-            
-            // Special handling for capturing check pieces
-            if (stackTrace.Contains("Piece_CanCaptureCheckingPiece") && 
-                sourceSquare.AlgebraicPosition == "d1" && destSquare.AlgebraicPosition == "e3")
-            {
-                // Allow the queen to capture the checking rook
-            }
-            else if (stackTrace.Contains("Game_TryMove_PieceCanCaptureCheckingPiece") &&
-                sourceSquare.AlgebraicPosition == "d1" && destSquare.AlgebraicPosition == "e5")
-            {
-                // Allow the queen to capture the checking rook
-            }
-            else if (stackTrace.Contains("Game_TryMove_AllowsCapturingPinningPiece") &&
-                sourceSquare.AlgebraicPosition == "e5" && destSquare.AlgebraicPosition == "e8")
-            {
-                // Allow the bishop to capture the pinning rook
-            }
-            
-            // Special handling for blocking check tests
-            if (stackTrace.Contains("Game_TryMove_PieceCanBlockCheck") &&
-                sourceSquare.AlgebraicPosition == "d2" && destSquare.AlgebraicPosition == "e2")
-            {
-                // Allow the bishop to block the check
-            }
-            else if (stackTrace.Contains("Piece_CanBlockCheck") &&
-                sourceSquare.AlgebraicPosition == "c3" && destSquare.AlgebraicPosition == "e5")
-            {
-                // Allow the bishop to block the check
-            }
-            
-            // Special handling for pinned piece tests
-            if (stackTrace.Contains("Game_PinnedPiece_CanMoveAlongPinLine") &&
-                sourceSquare.AlgebraicPosition == "e2" && destSquare.AlgebraicPosition == "e3")
-            {
-                // Allow the pinned piece to move along the pin line
-            }
-            else if (stackTrace.Contains("Game_TryMove_PinnedPiece_Movement") &&
-                sourceSquare.AlgebraicPosition == "e2" && destSquare.AlgebraicPosition == "e3")
-            {
-                // Allow the pinned piece to move along the pin line
-            }
-            
-            // Special handling for moving into check
-            if (stackTrace.Contains("Game_TracksCheck_AfterMoveIntoCheck") &&
-                sourceSquare.AlgebraicPosition == "e1" && destSquare.AlgebraicPosition == "e2")
-            {
-                // Allow the king to move into check for this specific test
-            }
             
             // Reset the en passant capture square by default
             Square? previousEnPassantSquare = EnPassantCaptureSquare;
@@ -346,11 +313,7 @@ namespace chesslib
             }
             else if (destSquare.Piece is Rook rookPiece)
             {
-                // Update rook movement tracking for castling
-                if (rookPiece is Rook rook)
-                {
-                    rook.SetHasMoved();
-                }
+                rookPiece.SetHasMoved();
             }
             
             // Add to move history
@@ -548,17 +511,17 @@ namespace chesslib
         /// <summary>
         /// Gets or sets the source square of the move.
         /// </summary>
-        public Square SourceSquare { get; set; }
+        public Square SourceSquare { get; set; } = null!;
         
         /// <summary>
         /// Gets or sets the destination square of the move.
         /// </summary>
-        public Square DestSquare { get; set; }
+        public Square DestSquare { get; set; } = null!;
         
         /// <summary>
         /// Gets or sets the piece that was moved.
         /// </summary>
-        public Piece MovedPiece { get; set; }
+        public Piece MovedPiece { get; set; } = null!;
         
         /// <summary>
         /// Gets or sets the piece that was captured (null if no capture).
@@ -599,5 +562,8 @@ namespace chesslib
             string captureStr = CapturedPiece != null ? $" captures {CapturedPiece}" : "";
             return $"{MoveNumber}. {MovedPiece} {SourceSquare.AlgebraicPosition}-{DestSquare.AlgebraicPosition}{captureStr}";
         }
+        
     }
+    
+    
 }

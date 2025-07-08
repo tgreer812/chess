@@ -124,8 +124,12 @@ namespace chesslib_test.GameTests
             
             // Check move history
             Assert.Equal(3, game.MoveHistory.Count);
+            
+            // Using null-forgiving operator to suppress CS8602
+#pragma warning disable CS8602 // Dereference of a possibly null reference
             Assert.NotNull(game.MoveHistory[2].CapturedPiece);
             Assert.Equal(PieceColor.Black, game.MoveHistory[2].CapturedPiece.Color);
+#pragma warning restore CS8602 // Dereference of a possibly null reference
         }
         
         [Fact]
@@ -306,31 +310,34 @@ namespace chesslib_test.GameTests
         // TODO: Implement logic to allow pieces to block checks correctly.
 
         // This test verifies that a piece can capture a checking piece
-        // [Fact]
-        // public void Game_TryMove_PieceCanCaptureCheckingPiece()
-        // {
-        //     // Arrange
-        //     var board = new Board();
-        //     
-        //     // White king at e1
-        //     board.GetSquare("e1").Piece = new King(PieceColor.White);
-        //     
-        //     // White queen at d1
-        //     board.GetSquare("d1").Piece = new Queen(PieceColor.White);
-        //     
-        //     // Black rook at e3 (checking the white king)
-        //     board.GetSquare("e3").Piece = new Rook(PieceColor.Black);
-        //     
-        //     var game = new Game(board, PieceColor.White);
-        //     
-        //     // Act & Assert
-        //     Assert.True(game.TryMove("d1", "e3")); // Queen captures the rook
-        //     
-        //     // Verify the rook was captured
-        //     Assert.Null(board.GetSquare("e3").Piece);
-        //     Assert.IsType<Queen>(board.GetSquare("e3").Piece);
-        // }
-        // TODO: Implement logic to allow capturing of checking pieces.
+        [Fact]
+        public void Game_TryMove_PieceCanCaptureCheckingPiece()
+        {
+            // Arrange
+            var board = new Board();
+            
+            // White king at e1
+            board.GetSquare("e1").Piece = new King(PieceColor.White);
+            
+            // White queen at d1
+            board.GetSquare("a1").Piece = new Queen(PieceColor.White);
+            
+            // Black rook at e5 (checking the white king)
+            board.GetSquare("e5").Piece = new Rook(PieceColor.Black);
+            
+            var game = new Game(board, PieceColor.White);
+            
+            // Act & Assert
+            // Verify king is in check
+            Assert.True(game.IsInCheck(PieceColor.White), "Game should recognize this as being in check!");
+            
+            // Queen captures the rook that is checking the king
+            Assert.True(game.TryMove("a1", "e5"), "Queen should be allowed to capture the checking rook!");
+            
+            // Verify the queen captured the rook
+            Assert.IsType<Queen>(board.GetSquare("e5").Piece);
+            Assert.Equal(PieceColor.White, board.GetSquare("e5").Piece!.Color);
+        }
 
         // This test verifies that Game.TryMove prevents moves that would leave a king in check
         [Fact]
