@@ -11,6 +11,7 @@ namespace chesslib.Controllers
         private TaskCompletionSource<(string from, string to)?>? _moveSource;
         private int _moveRequestId = 0; // Tracks the current move request
         private int _lastProcessedMoveId = 0; // Tracks the last processed move
+        private (string from, string to)? _queuedMove; // Holds a move if SetNextMove is called before GetMoveAsync
 
         /// <summary>
         /// Gets a value indicating whether the controller is currently waiting for a move.
@@ -28,16 +29,23 @@ namespace chesslib.Controllers
             // If moveId is provided and doesn't match current request, ignore this move
             if (moveId.HasValue && moveId.Value != _moveRequestId)
                 return;
-                
-            // If we've already processed a move with this ID or higher, ignore this move
-            if (_lastProcessedMoveId >= _moveRequestId)
-                return;
-                
-            // Mark this move as processed
-            _lastProcessedMoveId = _moveRequestId;
             
-            // Complete the task with the provided move
-            _moveSource?.TrySetResult((from, to));
+            // If there's a waiting move request, complete it immediately
+            if (_moveSource != null && !_moveSource.Task.IsCompleted)
+            {
+                // Mark this move as processed
+                _lastProcessedMoveId = _moveRequestId;
+                _moveSource.TrySetResult((from, to));
+                return;
+            }
+            
+            // If we've already processed a move with this ID and it's greater than 0, ignore this move
+            // Allow processing if _moveRequestId is 0 (initial state)
+            if (_moveRequestId > 0 && _lastProcessedMoveId >= _moveRequestId)
+                return;
+            
+            // No waiting request, so queue the move for the next GetMoveAsync call
+            _queuedMove = (from, to);
         }
 
         /// <summary>
@@ -47,6 +55,15 @@ namespace chesslib.Controllers
         {
             // Increment the move request ID to ensure we get fresh input
             _moveRequestId++;
+            
+            // If there's a queued move from a previous SetNextMove call, return it immediately
+            if (_queuedMove.HasValue)
+            {
+                var move = _queuedMove.Value;
+                _queuedMove = null; // Clear the queued move
+                _lastProcessedMoveId = _moveRequestId; // Mark as processed
+                return Task.FromResult<(string from, string to)?>(move);
+            }
             
             // Create a new task completion source for this move request
             _moveSource = new TaskCompletionSource<(string from, string to)?>();
