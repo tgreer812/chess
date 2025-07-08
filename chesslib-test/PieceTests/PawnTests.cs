@@ -340,7 +340,7 @@ namespace chesslib_test.PieceTests
 
             // Black en passant capture
             board = new Board();
-            game = new Game(board);
+            game = new Game(board, PieceColor.Black);
             whitePawn = new Pawn(PieceColor.White);
             blackPawn = new Pawn(PieceColor.Black);
 
