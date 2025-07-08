@@ -278,7 +278,7 @@ namespace chesslib
                 rookSourceSquare.Piece = null;
             }
             // Handle special move: En passant capture
-            else if (sourceSquare.Piece is Pawn && destSquare == EnPassantCaptureSquare)
+            else if (sourceSquare.Piece is Pawn && destSquare == previousEnPassantSquare)
             {
                 move.IsEnPassantCapture = true;
                 
