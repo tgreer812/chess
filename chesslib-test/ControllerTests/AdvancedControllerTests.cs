@@ -238,6 +238,55 @@ namespace chesslib_test
         }
 
         /// <summary>
+        /// Tests that the RandomController only considers legal moves (deterministic test).
+        /// This test verifies that all moves returned by GetAllValidMovesForTesting are valid.
+        /// </summary>
+        [Fact]
+        public void RandomController_GetAllValidMoves_OnlyReturnsLegalMoves()
+        {
+            // Test various positions to ensure comprehensive coverage
+            var positions = new[]
+            {
+                "4q3/8/8/8/8/8/8/4K3",  // King in check
+                "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR", // Starting position
+                "r1bqkb1r/pppp1ppp/2n2n2/4p3/4P3/3P1N2/PPP2PPP/RNBQKB1R", // Complex middlegame
+                "8/8/8/3k4/8/8/3K4/8" // King endgame
+            };
+
+            foreach (var fen in positions)
+            {
+                // Arrange
+                var board = new Board();
+                TestHelpers.SetupBoardFromFen(board, fen);
+                var game = new Game(board, PieceColor.White);
+                var controller = new RandomController();
+                
+                // Act - Get all valid moves
+                var allMoves = controller.GetAllValidMovesForTesting(game);
+                
+                // Assert - Every move should be valid
+                foreach (var move in allMoves)
+                {
+                    // Create a copy of the game to test the move
+                    var testBoard = new Board();
+                    TestHelpers.SetupBoardFromFen(testBoard, fen);
+                    var testGame = new Game(testBoard, PieceColor.White);
+                    
+                    // The move should be valid according to game rules
+                    var fromSquare = testGame.Board.GetSquare(move.from);
+                    var toSquare = testGame.Board.GetSquare(move.to);
+                    
+                    Assert.True(testGame.PrimaryHandler.IsValidMove(testGame, fromSquare, toSquare),
+                        $"Move {move.from}-{move.to} should be valid in position {fen}");
+                    
+                    // The move should also be executable
+                    Assert.True(testGame.TryMove(move.from, move.to),
+                        $"Move {move.from}-{move.to} should be executable in position {fen}");
+                }
+            }
+        }
+
+        /// <summary>
         /// Tests that a custom controller implementing IController can be used.
         /// </summary>
         [Fact]

@@ -24,6 +24,17 @@ namespace chesslib.Controllers
             return (move.from, move.to);
         }
 
+        /// <summary>
+        /// Gets all valid moves for the current player. 
+        /// This method is exposed for testing purposes.
+        /// </summary>
+        /// <param name="game">The current game state.</param>
+        /// <returns>A list of all valid moves as (from, to) tuples.</returns>
+        public List<(string from, string to)> GetAllValidMovesForTesting(Game game)
+        {
+            return GetAllValidMoves(game);
+        }
+
         private List<(string from, string to)> GetAllValidMoves(Game game)
         {
             var moves = new List<(string from, string to)>();
@@ -45,7 +56,9 @@ namespace chesslib.Controllers
                         for (int toCol = 0; toCol < boardSize; toCol++)
                         {
                             var toSquare = game.Board.GetSquare(toRow, toCol);
-                            if (piece.IsValidMove(game.Board, fromSquare, toSquare))
+                            // Use game handler validation instead of just piece validation
+                            // This ensures moves don't leave the king in check
+                            if (game.PrimaryHandler.IsValidMove(game, fromSquare, toSquare))
                             {
                                 moves.Add((fromSquare.AlgebraicPosition, toSquare.AlgebraicPosition));
                             }
