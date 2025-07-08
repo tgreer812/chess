@@ -309,6 +309,59 @@ namespace chesslib_test.PieceTests
             // White pawn should not be able to capture en passant if not adjacent
             Assert.False(whitePawn.IsValidMove(board, whiteSquare, captureSquare));
         }
+
+        [Fact]
+        public void Pawn_EnPassant_ActuallyCapturesEnemyPawn_BothColors()
+        {
+            // White en passant capture
+            var board = new Board();
+            var game = new Game(board);
+            var whitePawn = new Pawn(PieceColor.White);
+            var blackPawn = new Pawn(PieceColor.Black);
+
+            // Place white pawn on e5, black pawn on f5
+            var whiteSquare = board.GetSquare(3, 4); // e5
+            var blackSquare = board.GetSquare(3, 5); // f5
+            whiteSquare.Piece = whitePawn;
+            blackSquare.Piece = blackPawn;
+
+            // Simulate en passant is available at f6
+            var captureSquare = board.GetSquare(2, 5); // f6
+            game.EnPassantCaptureSquare = captureSquare;
+
+            // Perform the en passant move
+            bool moveResult = game.TryMove(whiteSquare, captureSquare);
+
+            Assert.True(moveResult);
+            // The black pawn should be removed from f5 having been captured en passant
+            Assert.Null(blackSquare.Piece);
+            // The white pawn should be on f6
+            Assert.Equal(whitePawn, captureSquare.Piece);
+
+            // Black en passant capture
+            board = new Board();
+            game = new Game(board);
+            whitePawn = new Pawn(PieceColor.White);
+            blackPawn = new Pawn(PieceColor.Black);
+
+            // Place black pawn on d4, white pawn on c4
+            var blackPawnSquare = board.GetSquare(4, 3); // d4
+            var whitePawnSquare = board.GetSquare(4, 2); // c4
+            blackPawnSquare.Piece = blackPawn;
+            whitePawnSquare.Piece = whitePawn;
+
+            // Simulate en passant is available at c3
+            var blackCaptureSquare = board.GetSquare(5, 2); // c3
+            game.EnPassantCaptureSquare = blackCaptureSquare;
+
+            // Perform the en passant move
+            moveResult = game.TryMove(blackPawnSquare, blackCaptureSquare);
+            Assert.True(moveResult);
+            // The white pawn should be removed from c4
+            Assert.Null(whitePawnSquare.Piece);
+            // The black pawn should be on c3
+            Assert.Equal(blackPawn, blackCaptureSquare.Piece);
+        }
         
         [Fact]
         public void Pawn_EnPassant_NoPawnToCapture_Invalid()
